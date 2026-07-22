@@ -87,12 +87,14 @@ WSGI_APPLICATION = 'unitus.wsgi.application'
 
 AUTH_USER_MODEL = 'accounts.User'
 
+USE_ADMIN_DB = os.environ.get('USE_ADMIN_DB') == '1'
+
 DATABASES = {
-'default': {
+    'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'USER': os.environ.get('DB_ADMIN_USER') if USE_ADMIN_DB else os.environ.get('DB_APP_USER'),
+        'PASSWORD': os.environ.get('DB_ADMIN_PASSWORD') if USE_ADMIN_DB else os.environ.get('DB_APP_PASSWORD'),
         'HOST': os.environ.get('DB_HOST'),
         'PORT': os.environ.get('DB_PORT'),
         'OPTIONS': {

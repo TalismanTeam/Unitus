@@ -1,5 +1,6 @@
 from django.db import models
 from accounts.models import User
+from .choices import MasteryLevel  
 
 
 class SkillCategory(models.Model):
@@ -22,14 +23,6 @@ class Skill(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class MasteryLevel(models.TextChoices):
-    BEGINNER = 'BEGINNER'
-    INTERMEDIATE = 'INTERMEDIATE'
-    ADVANCED = 'ADVANCED'
-    EXPERT = 'EXPERT'
-    MASTER = 'MASTER'
 
 
 class UserSkill(models.Model):
