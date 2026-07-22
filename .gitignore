@@ -5,6 +5,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+make_tree.py
+
 # C extensions
 *.so
 
