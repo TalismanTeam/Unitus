@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - Dashboard</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+    <h2>پروژه‌های من</h2>
+    <div id="list">
+      <div class="list-item">پروژه نمونه ۱</div>
+    </div>
+    <button onclick="addItem()">افزودن پروژه جدید</button>
+  </div>
+  <script>
+    function addItem() {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerText = 'پروژه جدید (پویا)';
+      document.getElementById('list').appendChild(div);
+    }
+  </script>
+</body>
+</html>

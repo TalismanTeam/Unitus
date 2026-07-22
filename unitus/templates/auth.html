@@ -1,0 +1,25 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - Home</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html" class="active">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+    <h2>ورود به حساب</h2>
+    <form method="POST"> <!-- در جنگو اینجا action و CSRF اضافه می‌شود -->
+      <input type="text" name="username" placeholder="نام کاربری">
+      <input type="password" name="password" placeholder="رمز عبور">
+      <button type="submit" onclick="event.preventDefault(); alert('ارسال فرم به جنگو')">ورود</button>
+    </form>
+  </div>
+</body>
+</html>

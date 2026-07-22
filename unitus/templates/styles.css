@@ -1,0 +1,15 @@
+
+:root { --primary: #2563eb; --bg: #f8fafc; --text: #0f172a; --border: #e2e8f0; }
+body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; }
+
+/* ناوبری مشترک */
+nav { display: flex; gap: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+nav a { text-decoration: none; color: #64748b; font-weight: bold; }
+nav a.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+/* فرم‌ها */
+form { background: white; padding: 20px; border: 1px solid var(--border); border-radius: 8px; }
+input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
+button { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+.list-item { background: white; padding: 10px; margin-bottom: 5px; border: 1px solid var(--border); border-radius: 5px; }
