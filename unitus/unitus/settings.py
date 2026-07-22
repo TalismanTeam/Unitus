@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv 
-from local_setting import *
+from .local_setting import *
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -44,6 +44,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'accounts',
+    'skills',
+    'projects',
+    'collaboration',   # Tickets
+    'chat',
+    'reviews',
+    'moderation', 
 ]
 
 MIDDLEWARE = [
@@ -78,6 +84,8 @@ WSGI_APPLICATION = 'unitus.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+AUTH_USER_MODEL = 'accounts.User'
 
 DATABASES = {
 'default': {
@@ -135,4 +143,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'accounts.User'
+
