@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - جستجو و کشف</title>
+  <style>
+    .search-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .search-tab { background: transparent; color: var(--muted); border: none; font-size: 16px; padding: 10px 15px; cursor: pointer; border-radius: 6px; transition: 0.3s; }
+    .search-tab.active { background: var(--surface-2); color: var(--accent); font-weight: bold; }
+    
+    .layout-grid { display: grid; grid-template-columns: 250px 1fr; gap: 25px; align-items: start; }
+    @media (max-width: 768px) { .layout-grid { grid-template-columns: 1fr; } }
+
+    .category-badge { background: var(--surface-2); color: var(--text); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; transition: 0.2s; }
+    .category-badge:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 1000px;">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="search.html" class="active">Search</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
+      <div class="search-tabs">
+        <button class="search-tab active">📁 پروژه‌ها (Projects)</button>
+        <button class="search-tab">📄 آگهی‌ها (Ads)</button>
+        <button class="search-tab">👥 کاربران (Users)</button>
+      </div>
+
+      <div style="display: flex; gap: 15px;">
+        <input type="text" placeholder="عبارت مورد نظر، کلیدواژه، یا مهارت را وارد کنید..." style="margin: 0; flex: 1;">
+        <button>جستجو</button>
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);">⭐ ذخیره جستجو</button>
+      </div>
+    </div>
+
+    <div class="layout-grid">
+      <aside>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">مرتب‌سازی (Sort)</h3>
+          <select style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+            <option value="" disabled selected style="background: var(--surface);">معیار مرتب‌سازی را انتخاب کنید</option>
+            <option style="background: var(--surface);">مرتبط‌ترین (Most Relevant)</option>
+            <option style="background: var(--surface);">جدیدترین (Newest)</option>
+            <option style="background: var(--surface);">قدیمی‌ترین (Oldest)</option>
+            <option style="background: var(--surface);">محبوب‌ترین (Most Popular)</option>
+          </select>
+        </div>
+
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">فیلترها (Filters)</h3>
+          
+          <label style="display: block; color: var(--muted); font-size: 14px; margin-bottom: 5px;">سطح تجربه (Experience):</label>
+          <select style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-bottom: 15px;">
+            <option value="" disabled selected style="background: var(--surface);">انتخاب سطح تجربه</option>
+            <option style="background: var(--surface);">Beginner</option>
+            <option style="background: var(--surface);">Intermediate</option>
+            <option style="background: var(--surface);">Advanced</option>
+            <option style="background: var(--surface);">Expert / Master</option>
+          </select>
+
+          <div style="display: flex; gap: 10px; flex-direction: column;">
+            <button style="width: 100%;">اعمال فیلترها</button>
+            <button style="background: transparent; color: #ef4444; border: 1px solid #ef4444; width: 100%;">حذف فیلترها (Clear)</button>
+          </div>
+        </div>
+
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">جستجوهای ذخیره‌شده</h3>
+          <div id="savedSearchesList" style="margin-bottom: 15px;">
+            <p style="color: var(--muted); font-size: 13px; margin: 0;">هنوز جستجویی ذخیره نشده است.</p>
+          </div>
+
+          <h3 style="margin-top: 20px; color: var(--text); font-size: 16px;">تاریخچه اخیر</h3>
+          <div id="searchHistoryList">
+            <p style="color: var(--muted); font-size: 13px; margin: 0;">تاریخچه جستجویی یافت نشد.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">مرور دسته‌بندی‌ها (Categories)</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <span class="category-badge">توسعه وب (Web Dev)</span>
+            <span class="category-badge">طراحی (Design)</span>
+            <span class="category-badge">هوش مصنوعی (AI)</span>
+            <span class="category-badge">بازاریابی (Marketing)</span>
+            <span class="category-badge">علوم داده (Data Science)</span>
+          </div>
+        </div>
+
+        <h2 style="color: var(--text); font-size: 18px; margin-bottom: 15px;">نتایج جستجو</h2>
+
+        <div id="searchResultsList" style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); text-align: center;">
+          <p style="color: var(--muted); font-size: 14px; margin: 0;">هیچ نتیجه‌ای برای نمایش وجود ندارد. عبارتی را جستجو کنید.</p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</body>
+</html>
