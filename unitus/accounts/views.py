@@ -10,6 +10,15 @@ from skills.models import Skill, UserSkill
 from skills.choices import MasteryLevel
 from moderation.models import Report
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+
+from .forms import RegisterForm, LoginForm
+from .models import User
+
+
 from .serialization import (
     serialize_avatar,
     serialize_me,
@@ -21,7 +30,7 @@ from .serialization import (
 
 ME_PATCHABLE_FIELDS = [
     "first_name", "last_name", "gender", "birth_year",
-    "phone_number", "location", "education_background",
+    "phone_number", "location", "education_background", "about_me",
 ]
 
 
@@ -293,13 +302,6 @@ def report_user_view(request, id):
     )
     return JsonResponse(serialize_report(report), status=201)
 # accounts/views.py
-from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-
-from .forms import RegisterForm, LoginForm
-from .models import User
 
 
 def register_view(request):

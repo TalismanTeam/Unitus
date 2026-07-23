@@ -66,6 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True)
     location = models.CharField(max_length=100, null=True, blank=True)
     education_background = models.TextField(null=True, blank=True)
+    about_me = models.TextField(null=True, blank=True)
     avatar_icon = models.ForeignKey(Avatar, on_delete=models.SET_NULL, null=True, blank=True)
     is_open_to_work = models.BooleanField(default=False, db_index=True)
     account_status = models.CharField(max_length=10, choices=AccountStatus.choices, default=AccountStatus.ACTIVE)
