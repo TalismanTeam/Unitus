@@ -1,22 +1,25 @@
 # 🛠️ Unitus Project
 
-Welcome to the Unitus project! This guide will walk you through the step-by-step process of setting up the project from scratch on your local machine. 
+Welcome to the Unitus project! This guide will walk you through the step-by-step process of setting up the project from scratch on your local machine.
 
-To ensure maximum security and best practices, this project uses a principle of least privilege for the database and environment variables to protect sensitive data[cite: 6].
+To ensure maximum security and best practices, this project uses the principle of least privilege for the database and environment variables to protect sensitive data.
 
 ---
 
 ## 📋 Prerequisites
+
 Before you begin, ensure you have the following installed on your system:
-* **Python** (v3.8 or higher)
-* **MySQL Server**
-* **Git**
+
+- **Python** (v3.8 or higher)
+- **MySQL Server**
+- **Git**
 
 ---
 
 ## 🚀 Step-by-Step Setup Guide
 
 ### 1. Clone the Repository & Environment Setup
+
 First, clone the project and set up an isolated Python virtual environment:
 
 ```bash
@@ -35,7 +38,6 @@ source .venv/bin/activate
 
 # Install all required dependencies
 pip install -r requirements.txt
-
 ```
 
 ### 2. Database Creation & Security Roles
@@ -48,17 +50,15 @@ Run the provided SQL script to automatically create the database and these users
 
 ```cmd
 mysql -u root -p < setup_db_users.sql
-
 ```
 
 **For Windows (PowerShell) / Mac / Linux:**
 
 ```bash
 mysql -u root -p -e "source setup_db_users.sql"
-
 ```
 
-*(You will be prompted to enter your MySQL `root` password).*
+*(You will be prompted to enter your MySQL `root` password.)*
 
 ### 3. Application Configuration
 
@@ -68,7 +68,7 @@ We keep our configuration files out of version control for security purposes. Yo
 
 Create a file named `.env` in the **root directory** of the project and add the standard backend user credentials:
 
-```text
+```env
 DEBUG=True
 SECRET_KEY=your-django-secret-key
 DB_NAME=unitus_db
@@ -80,7 +80,6 @@ DB_ADMIN_PASSWORD=YourAdminSecurePassword2026!
 
 DB_APP_USER=app_backend
 DB_APP_PASSWORD=YourAppSecurePassword2026!
-
 ```
 
 #### B. The `local_setting.py` File (Django Settings)
@@ -95,7 +94,6 @@ DEBUG = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-your-custom-secret-key-here'
-
 ```
 
 ### 4. Apply Database Migrations
@@ -110,7 +108,6 @@ We do this by injecting an environment variable `USE_ADMIN_DB=1` just for the mi
 $env:USE_ADMIN_DB="1"
 python unitus/manage.py migrate
 $env:USE_ADMIN_DB=""
-
 ```
 
 **On Windows (CMD):**
@@ -119,14 +116,12 @@ $env:USE_ADMIN_DB=""
 set USE_ADMIN_DB=1
 python unitus/manage.py migrate
 set USE_ADMIN_DB=
-
 ```
 
 **On Mac/Linux:**
 
 ```bash
 USE_ADMIN_DB=1 python unitus/manage.py migrate
-
 ```
 
 ### 5. Run the Development Server
@@ -135,44 +130,40 @@ Everything is now configured! You can start the Django development server using 
 
 ```bash
 python unitus/manage.py runserver
-
 ```
 
 Open your browser and navigate to `http://127.0.0.1:8000/`. Welcome to Unitus! 🎉
 
-```
+---
 
-
-```
 ## 🔍 Troubleshooting
 
 ### MySQL Error 1419 (SUPER privilege & binary logging)
+
 If you encounter the following error while running the trigger migrations:
+
 > `MySQLdb.OperationalError: (1419, 'You do not have the SUPER privilege and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)')`
 
 This happens because MySQL, by default, restricts user accounts from creating triggers or functions when binary logging is turned on. To safely bypass this on your local machine, follow these steps:
 
 1. Open your terminal or database client and log into MySQL as the **root** user:
+
    ```bash
    mysql -u root -p
-
-```
+   ```
 
 2. Execute the following global configuration command to trust function and trigger creators:
-```sql
-SET GLOBAL log_bin_trust_function_creators = 1;
 
-```
-
+   ```sql
+   SET GLOBAL log_bin_trust_function_creators = 1;
+   ```
 
 3. Exit the MySQL prompt, return to your project terminal, and re-run the Django migration command:
-```bash
-# For PowerShell:
-$env:USE_ADMIN_DB="1"; python unitus/manage.py migrate; $env:USE_ADMIN_DB=""
 
-# For CMD:
-set USE_ADMIN_DB=1 && python unitus/manage.py migrate && set USE_ADMIN_DB=
+   ```bash
+   # For PowerShell:
+   $env:USE_ADMIN_DB="1"; python unitus/manage.py migrate; $env:USE_ADMIN_DB=""
 
-```
-```
-
+   # For CMD:
+   set USE_ADMIN_DB=1 && python unitus/manage.py migrate && set USE_ADMIN_DB=
+   ```
