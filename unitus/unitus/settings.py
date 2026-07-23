@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'chat',
     'reviews',
     'moderation', 
+    'search', 
 ]
 
 MIDDLEWARE = [
