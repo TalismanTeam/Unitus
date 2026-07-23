@@ -87,6 +87,10 @@ WSGI_APPLICATION = 'unitus.wsgi.application'
 
 AUTH_USER_MODEL = 'accounts.User'
 
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
 USE_ADMIN_DB = os.environ.get('USE_ADMIN_DB') == '1'
 
 DATABASES = {
