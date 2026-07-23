@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Job Ads</title>
+</head>
+<body>
+
+<h1>Search Job Ads</h1>
+
+<form method="get" action="{% url 'search:search_ads' %}">
+    <input type="text" name="q" placeholder="Search by title, description, or role..." value="{{ query }}">
+
+    <select name="skill">
+        <option value="">Any skill</option>
+        {% for skill in skills %}
+            <option value="{{ skill.id }}" {% if selected_skill == skill.id %}selected{% endif %}>
+                {{ skill.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="min_level">
+        <option value="">Any level</option>
+        {% for value, label in mastery_levels %}
+            <option value="{{ value }}" {% if selected_min_level == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input type="number" name="duration_min" placeholder="Min duration (days)" value="{{ duration_min|default_if_none:'' }}">
+    <input type="number" name="duration_max" placeholder="Max duration (days)" value="{{ duration_max|default_if_none:'' }}">
+
+    <button type="submit">Search</button>
+</form>
+
+<div class="results">
+    {% for ad in page_obj %}
+        <div class="ad-card">
+            <h3>{{ ad.project_role.role_title }}</h3>
+            <p><strong>Project:</strong> {{ ad.project.title }}</p>
+            <p>{{ ad.project.short_description }}</p>
+            <p>{{ ad.project_role.role_description }}</p>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <button type="submit" disabled title="Collaboration module coming soon">Send Collaboration Request (Soon)</button>
+                </form>
+        </div>
+    {% empty %}
+        <p>No matching job ads found.</p>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&skill={{ selected_skill|default:'' }}&min_level={{ selected_min_level }}&duration_min={{ duration_min|default:'' }}&duration_max={{ duration_max|default:'' }}">Previous</a>
+    {% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&skill={{ selected_skill|default:'' }}&min_level={{ selected_min_level }}&duration_min={{ duration_min|default:'' }}&duration_max={{ duration_max|default:'' }}">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+
+</body>
+</html>
