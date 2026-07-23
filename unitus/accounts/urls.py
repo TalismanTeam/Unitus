@@ -16,4 +16,8 @@ urlpatterns = [
     path("users/<int:id>", views.public_profile_view, name="public-profile"),
     path("users/<int:id>/active-projects-count", views.active_projects_count_view, name="active-projects-count"),
     path("users/<int:id>/report", views.report_user_view, name="report-user"),
+    path('register/', views.register_view, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
 ]
