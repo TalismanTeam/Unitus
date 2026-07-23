@@ -11,4 +11,11 @@ urlpatterns = [
     path('<int:pk>/members/<int:member_id>/remove/', views.project_remove_member, name='project_remove_member'),
     path('<int:pk>/transfer-ownership/', views.project_transfer_ownership, name='project_transfer_ownership'),
     path('jobads/<int:pk>/', views.jobad_detail, name='jobad_detail'),
+
+    # Added routes
+    path('<int:pk>/edit/', views.project_edit, name='project_edit'),
+    path('<int:pk>/delete/', views.project_delete, name='project_delete'),
+    path('<int:pk>/roles/<int:role_id>/edit/', views.project_edit_role, name='project_edit_role'),
+    path('<int:pk>/roles/<int:role_id>/delete/', views.project_delete_role, name='project_delete_role'),
+    path('<int:pk>/resign/', views.project_resign, name='project_resign'),
 ]
