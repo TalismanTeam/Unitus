@@ -38,12 +38,18 @@ class Project(models.Model):
             )
         ]
 
+    def __str__(self):
+        return self.title
+
 
 class ProjectRole(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     role_title = models.CharField(max_length=50)
     role_description = models.TextField()
     capacity = models.SmallIntegerField()
+
+    def __str__(self):
+        return f'{self.role_title} ({self.project.title})'
 
 
 class ProjectRoleSkill(models.Model):
@@ -56,6 +62,9 @@ class ProjectRoleSkill(models.Model):
             models.UniqueConstraint(fields=['role', 'skill'], name='unique_role_skill_pk')
         ]
 
+    def __str__(self):
+        return f'{self.role.role_title} needs {self.skill.name} ({self.get_min_required_level_display()})'
+
 
 class JobAd(models.Model):
     class Status(models.TextChoices):
@@ -67,6 +76,9 @@ class JobAd(models.Model):
     project_role = models.OneToOneField(ProjectRole, on_delete=models.CASCADE)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Job Ad: {self.project_role.role_title} - {self.project.title} ({self.get_status_display()})'
 
 
 class ProjectMember(models.Model):
@@ -88,3 +100,6 @@ class ProjectMember(models.Model):
         indexes = [
             models.Index(fields=['project_role', 'member_status'])
         ]
+
+    def __str__(self):
+        return f'{self.user.username} @ {self.project.title} ({self.get_member_status_display()})'

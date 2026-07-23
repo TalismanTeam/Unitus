@@ -1,3 +1,236 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 
-# Create your views here.
+from skills.models import UserSkill
+
+from .forms import (
+    ProjectForm, ProjectRoleForm, ProjectStateChangeForm, RoleSkillFormSet, TransferOwnershipForm,
+)
+from .models import JobAd, Project, ProjectMember, ProjectRole
+from .permissions import can_view_workspace, is_project_pm
+from .services import sync_job_ad_status_for_role
+
+
+def home(request):
+    """Dual search (users / job ads) + smart suggestions (SRS section 4)."""
+    query = request.GET.get('q', '').strip()
+    search_type = request.GET.get('type', 'jobads')
+
+    job_ad_results = None
+    user_results = None
+
+    if query:
+        if search_type == 'users':
+            from accounts.models import User
+            user_results = User.objects.filter(
+                Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query)
+            )[:20]
+        else:
+            job_ad_results = JobAd.objects.filter(
+                status=JobAd.Status.OPEN
+            ).filter(
+                Q(project__short_description__icontains=query) | Q(project_role__role_description__icontains=query)
+            ).select_related('project', 'project_role')[:20]
+
+    suggestions = []
+    if request.user.is_authenticated:
+        my_skill_ids = UserSkill.objects.filter(user=request.user).values_list('skill_id', flat=True)
+        if my_skill_ids:
+            suggestions = JobAd.objects.filter(
+                status=JobAd.Status.OPEN,
+                project_role__projectroleskill__skill_id__in=my_skill_ids,
+            ).select_related('project', 'project_role').distinct()[:10]
+
+    return render(request, 'projects/home.html', {
+        'query': query,
+        'search_type': search_type,
+        'job_ad_results': job_ad_results,
+        'user_results': user_results,
+        'suggestions': suggestions,
+    })
+
+
+def jobad_detail(request, pk):
+    """Public view: project summary + the responsibilities of one specific role (SRS 3.4)."""
+    job_ad = get_object_or_404(JobAd.objects.select_related('project', 'project_role'), pk=pk)
+    return render(request, 'projects/jobad_detail.html', {'job_ad': job_ad})
+
+
+@login_required
+def project_create(request):
+    """Step 1 of project creation: basic info. PM comes from request.user (SRS 3.2)."""
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.pm = request.user
+            project.save()
+            messages.success(request, 'Project created. Now add at least one role.')
+            return redirect('project_add_role', pk=project.pk)
+    else:
+        form = ProjectForm()
+    return render(request, 'projects/project_create.html', {'form': form})
+
+
+@login_required
+def project_add_role(request, pk):
+    """Step 2: add one role + its required skills at a time. Auto-generates a JobAd per role (SRS 3.3)."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_pm(request.user, project):
+        raise PermissionDenied('Only the project manager can add roles.')
+
+    role_form = ProjectRoleForm(request.POST or None)
+    formset = RoleSkillFormSet(request.POST or None, queryset=RoleSkillFormSet.model.objects.none())
+
+    if request.method == 'POST' and role_form.is_valid() and formset.is_valid():
+        role = role_form.save(commit=False)
+        role.project = project
+        role.save()
+
+        for skill_form in formset:
+            if skill_form.cleaned_data and not skill_form.cleaned_data.get('DELETE'):
+                role_skill = skill_form.save(commit=False)
+                role_skill.role = role
+                role_skill.save()
+
+        JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
+        messages.success(request, f'Role "{role.role_title}" added and job ad published.')
+        return redirect('project_add_role', pk=project.pk)
+
+    existing_roles = project.projectrole_set.select_related('jobad').all()
+    return render(request, 'projects/project_add_role.html', {
+        'project': project,
+        'role_form': role_form,
+        'formset': formset,
+        'existing_roles': existing_roles,
+    })
+
+
+@login_required
+def project_workspace(request, pk):
+    """Private workspace: full description, all roles, team members (SRS 3.4)."""
+    project = get_object_or_404(Project, pk=pk)
+    if not can_view_workspace(request.user, project):
+        raise PermissionDenied("You don't have access to this project's workspace.")
+
+    roles = project.projectrole_set.prefetch_related('projectroleskill_set__skill').all()
+    members = project.projectmember_set.filter(
+        member_status=ProjectMember.MemberStatus.ACTIVE
+    ).select_related('user', 'project_role')
+
+    return render(request, 'projects/project_workspace.html', {
+        'project': project,
+        'roles': roles,
+        'members': members,
+        'is_pm': is_project_pm(request.user, project),
+    })
+
+
+@login_required
+def project_state_change(request, pk):
+    """PM updates project state; terminating requires a reason (SRS 3.5)."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_pm(request.user, project):
+        raise PermissionDenied('Only the project manager can change project state.')
+
+    if request.method == 'POST':
+        old_state = project.state
+        form = ProjectStateChangeForm(request.POST, instance=project)
+        if form.is_valid():
+            updated_project = form.save()
+            # This used to be a MySQL trigger (see projects/migrations/0002 + 0003,
+            # reverted as faulty). Doing it in application code instead: once a
+            # project leaves RECRUITING, any still-open job ads no longer apply.
+            if old_state == Project.State.RECRUITING and updated_project.state != Project.State.RECRUITING:
+                JobAd.objects.filter(project=updated_project, status=JobAd.Status.OPEN).update(
+                    status=JobAd.Status.CANCELLED
+                )
+            messages.success(request, 'Project status updated.')
+            return redirect('project_workspace', pk=project.pk)
+    else:
+        form = ProjectStateChangeForm(instance=project)
+    return render(request, 'projects/project_state_change.html', {'project': project, 'form': form})
+
+
+@login_required
+def dashboard(request):
+    """Private dashboard, 5 tabs (SRS 2.6)."""
+    user = request.user
+    managed = Project.objects.filter(pm=user)
+    joined_ids = ProjectMember.objects.filter(
+        user=user, member_status=ProjectMember.MemberStatus.ACTIVE
+    ).values_list('project_id', flat=True)
+    joined = Project.objects.filter(id__in=joined_ids)
+
+    all_related = (managed | joined).distinct()
+
+    context = {
+        'in_progress': all_related.filter(state=Project.State.IN_PROGRESS),
+        'suspended': all_related.filter(state=Project.State.SUSPENDED),
+        'completed': all_related.filter(state=Project.State.TERMINATED),
+        'managed': managed,
+        'all_related': all_related,
+    }
+    return render(request, 'projects/dashboard.html', context)
+
+
+@login_required
+def project_remove_member(request, pk, member_id):
+    """PM removes a member directly - no ticket needed (SRS 5, PM permissions)."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_pm(request.user, project):
+        raise PermissionDenied('Only the project manager can remove members.')
+
+    member = get_object_or_404(ProjectMember, pk=member_id, project=project)
+
+    if request.method == 'POST':
+        member.member_status = ProjectMember.MemberStatus.REMOVED
+        member.save(update_fields=['member_status'])
+        if member.project_role:
+            sync_job_ad_status_for_role(member.project_role)
+        messages.success(request, f'{member.user.username} has been removed from the project.')
+        return redirect('project_workspace', pk=project.pk)
+
+    return render(request, 'projects/project_remove_member_confirm.html', {
+        'project': project, 'member': member,
+    })
+
+
+@login_required
+def project_transfer_ownership(request, pk):
+    """Multi-step confirmation with an explicit warning, per SRS 5 (Ownership Transfer)."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_pm(request.user, project):
+        raise PermissionDenied('Only the current project manager can transfer ownership.')
+
+    from accounts.models import User
+    candidate_ids = ProjectMember.objects.filter(
+        project=project, member_status=ProjectMember.MemberStatus.ACTIVE
+    ).exclude(user=project.pm).values_list('user_id', flat=True)
+    candidates = User.objects.filter(id__in=candidate_ids)
+
+    if not candidates.exists():
+        messages.error(request, 'There are no active members to transfer ownership to.')
+        return redirect('project_workspace', pk=project.pk)
+
+    if request.method == 'POST':
+        form = TransferOwnershipForm(request.POST, candidate_users=candidates)
+        if form.is_valid():
+            new_owner = form.cleaned_data['new_owner']
+            old_pm = project.pm
+            project.pm = new_owner
+            project.save(update_fields=['pm'])
+            # The old PM keeps/gains a plain membership row so they aren't locked out of the project.
+            ProjectMember.objects.get_or_create(
+                project=project, user=old_pm,
+                defaults={'member_status': ProjectMember.MemberStatus.ACTIVE},
+            )
+            messages.success(request, f'Ownership transferred to {new_owner.username}.')
+            return redirect('project_workspace', pk=project.pk)
+    else:
+        form = TransferOwnershipForm(candidate_users=candidates)
+
+    return render(request, 'projects/project_transfer_ownership.html', {'project': project, 'form': form})
