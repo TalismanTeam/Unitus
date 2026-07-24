@@ -5,7 +5,6 @@ from .models import Project, ProjectRole, ProjectRoleSkill
 
 
 class ProjectForm(forms.ModelForm):
-    """Step 1: basic project info. `pm` is set in the view from request.user."""
 
     class Meta:
         model = Project
@@ -68,4 +67,44 @@ class TransferOwnershipForm(forms.Form):
 
     def __init__(self, *args, candidate_users=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['new_owner'].queryset = candidate_users
+        if candidate_users is not None:
+            self.fields['new_owner'].queryset = candidate_users
+
+
+class ProjectEditForm(forms.ModelForm):
+
+
+    class Meta:
+        model = Project
+        fields = ['title', 'short_description', 'full_description', 'duration_days']
+        widgets = {
+            'short_description': forms.TextInput(attrs={'maxlength': 255}),
+            'full_description': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
+class ProjectRoleEditForm(forms.ModelForm):
+
+
+    class Meta:
+        model = ProjectRole
+        fields = ['role_title', 'role_description', 'capacity']
+        widgets = {
+            'role_description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def clean_capacity(self):
+        capacity = self.cleaned_data['capacity']
+        if capacity < 1:
+            raise forms.ValidationError('Capacity must be at least 1.')
+        return capacity
+
+
+class ProjectResignForm(forms.Form):
+
+
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Please state your reason for resigning...'}),
+        label='Resignation Reason',
+        required=True,
+    )
