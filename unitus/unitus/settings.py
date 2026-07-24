@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'channels',
+
     'accounts',
     'skills',
     'projects',
@@ -52,6 +54,14 @@ INSTALLED_APPS = [
     'moderation', 
     'search', 
 ]
+
+ASGI_APPLICATION = 'unitus.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
