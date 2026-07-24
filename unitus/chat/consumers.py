@@ -58,7 +58,7 @@ class ChatConsumer(BaseChatConsumer):
         message = await database_sync_to_async(services.save_message)(
             self.room_id, self.user.id, content
         )
-        payload = serialize_message(message)
+        payload = await database_sync_to_async(serialize_message)(message)
 
         await self.channel_layer.group_send(
             self.group_name,
@@ -115,7 +115,7 @@ class DirectChatConsumer(BaseChatConsumer):
         if message is None:
             return  # room turned out to be closed
 
-        payload = serialize_message(message)
+        payload = await database_sync_to_async(serialize_message)(message)
         payload['room_id'] = room.id  # lets the frontend switch to ws/chat/room/<id>/ afterwards
 
         await self.channel_layer.group_send(
