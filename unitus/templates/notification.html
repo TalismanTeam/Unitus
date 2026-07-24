@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - Notifications</title>
+  <style>
+    .layout-grid { display: grid; grid-template-columns: 1fr 300px; gap: 25px; align-items: start; }
+    @media (max-width: 768px) { .layout-grid { grid-template-columns: 1fr; } }
+
+    .notification-tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+    .notification-tab { background: transparent; color: var(--muted); border: none; font-size: 15px; padding: 10px 15px; cursor: pointer; border-radius: 6px; transition: 0.3s; }
+    .notification-tab.active { background: var(--surface-2); color: var(--accent); font-weight: bold; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: var(--surface); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 400px; width: 90%; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 1100px;">
+    
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="search.html">Search</a>
+      <a href="matchmaking.html">Matchmaking</a>
+      <a href="tickets.html">Tickets</a>
+      <a href="chat.html">Chat</a>
+      <a href="notifications.html" class="active">Notifications</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <h1 style="margin: 0 0 5px 0; color: var(--text); font-size: 22px;">Notification Center</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 14px;">Manage your system alerts, invites, and activity updates.</p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);" onclick="document.getElementById('markAllModal').style.display='flex'">Mark All as Read</button>
+      </div>
+    </div>
+
+    <div class="layout-grid">
+      
+      <main>
+        <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); min-height: 400px; display: flex; flex-direction: column;">
+          
+          <div class="notification-tabs">
+            <button class="notification-tab active">All Notifications</button>
+            <button class="notification-tab">Unread</button>
+            <button class="notification-tab">Read</button>
+          </div>
+
+          <div id="notificationsList" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="color: var(--muted); font-size: 14px; margin: 0;">No notifications found.</p>
+          </div>
+
+        </div>
+      </main>
+
+      <aside>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px; margin-bottom: 15px;">Notification Settings</h3>
+          
+          <form style="background: transparent; padding: 0; border: none; box-shadow: none;" onsubmit="event.preventDefault();">
+            <div style="margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 14px; cursor: pointer;">
+                <input type="checkbox" checked style="width: auto; margin: 0;"> Mute Project Chat Notifications
+              </label>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="width: auto; margin: 0;"> Mute Direct Messages
+              </label>
+            </div>
+
+            <button type="submit" style="width: 100%;">Save Preferences</button>
+          </form>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <div id="markAllModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0; color: var(--text);">Mark All as Read</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 25px;">Are you sure you want to mark all unread notifications as read?</p>
+      
+      <div style="display: flex; gap: 10px;">
+        <button style="background: var(--accent); color: #1a1200; flex: 1;" onclick="document.getElementById('markAllModal').style.display='none'">Confirm</button>
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('markAllModal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteNotificationModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0; color: #ef4444;">Delete Notification</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 25px;">Are you sure you want to delete this notification? This action cannot be undone.</p>
+      
+      <div style="display: flex; gap: 10px;">
+        <button style="background: #ef4444; color: white; flex: 1;">Delete</button>
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('deleteNotificationModal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
