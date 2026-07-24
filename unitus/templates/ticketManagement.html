@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - Ticket Management</title>
+  <style>
+    body {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+
+    nav {
+      direction: ltr !important;
+      display: flex;
+      justify-content: flex-start;
+      gap: 15px;
+    }
+
+    .ticket-tabs { display: flex; flex-direction: column; gap: 10px; }
+    .ticket-tab { 
+      background: transparent; 
+      color: var(--muted); 
+      border: 1px solid transparent; 
+      font-size: 15px; 
+      padding: 12px 15px; 
+      cursor: pointer; 
+      border-radius: 6px; 
+      transition: 0.3s; 
+      text-align: left !important; 
+      width: 100%; 
+    }
+    .ticket-tab.active { background: var(--surface-2); color: var(--accent); border-color: var(--border); font-weight: bold; }
+    .ticket-tab:hover:not(.active) { background: var(--surface-2); color: var(--text); }
+    
+    .layout-grid { 
+      display: grid; 
+      grid-template-columns: 280px 1fr; 
+      gap: 25px; 
+      align-items: start; 
+      direction: ltr !important;
+    }
+    @media (max-width: 768px) { .layout-grid { grid-template-columns: 1fr; } }
+
+    input, textarea, select {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: var(--surface); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 500px; width: 90%; text-align: left; }
+  </style>
+</head>
+<body style="direction: ltr !important; text-align: left !important;">
+  <div class="container" style="max-width: 1100px; direction: ltr !important;">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="search.html">Search</a>
+      <a href="matchmaking.html">Matchmaking</a>
+      <a href="tickets.html" class="active">Tickets</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <h1 style="margin: 0 0 5px 0; color: var(--text); font-size: 22px;">Ticket & Invitation Management</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 14px;">Track applications, review candidates, and manage project invitations.</p>
+      </div>
+      <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);">Create New Ticket</button>
+    </div>
+
+    <div class="layout-grid">
+      <aside>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px; margin-bottom: 15px;">Inbox</h3>
+          <div class="ticket-tabs">
+            <button class="ticket-tab active">📥 Received (Action Needed)</button>
+            <button class="ticket-tab">📤 Sent (Pending Review)</button>
+            <button class="ticket-tab">✅ Approved (Accepted)</button>
+            <button class="ticket-tab">🗄️ History (Closed / Rejected)</button>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); min-height: 400px; display: flex; flex-direction: column;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+            <h2 style="color: var(--text); font-size: 18px; margin: 0;">Ticket List</h2>
+            <select style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; width: auto;">
+              <option value="" disabled selected style="background: var(--surface);">Filter by Type</option>
+              <option style="background: var(--surface);">All Types</option>
+              <option style="background: var(--surface);">Collaboration Request (Application)</option>
+              <option style="background: var(--surface);">Invitation</option>
+            </select>
+          </div>
+
+          <div id="ticketsList" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <p style="color: var(--muted); font-size: 15px; margin: 0;">No tickets found in this section.</p>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="submitApplicationModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0; color: var(--text);">Submit Collaboration Application</h3>
+      <form style="background: transparent; padding: 0; border: none; box-shadow: none;" onsubmit="event.preventDefault();">
+        <label style="display: block; font-weight: bold; color: var(--text); margin-bottom: 10px;">Target Advertisement:</label>
+        <input type="text" disabled placeholder="Selected advertisement title" style="margin-bottom: 15px;">
+        
+        <label style="display: block; font-weight: bold; color: var(--text); margin-bottom: 10px;">Introduction Message (Optional):</label>
+        <textarea placeholder="Write a short message to introduce yourself to the PM..." style="width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); min-height: 100px; outline: none; margin-bottom: 20px; resize: vertical;"></textarea>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" style="flex: 1;">Submit Application</button>
+          <button type="button" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('submitApplicationModal').style.display='none'">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="reviewApplicationModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0; color: var(--text);">Review Application</h3>
+      <div style="margin-bottom: 20px;">
+        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Applicant:</strong> Unnamed</p>
+        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Requested Role:</strong> Unspecified</p>
+        <div style="background: var(--bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-top: 15px;">
+          <p style="color: var(--text); font-size: 14px; margin: 0;">No message provided.</p>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1; font-size: 13px;">View Skills</button>
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1; font-size: 13px;">View Portfolio</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 20px;">
+        <button style="background: #22c55e; color: white; flex: 1;">Accept</button>
+        <button style="background: #ef4444; color: white; flex: 1;">Reject</button>
+        <button style="background: transparent; color: var(--muted); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('reviewApplicationModal').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="withdrawModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <h3 style="margin-top: 0; color: #ef4444;">Withdraw Application</h3>
+      <p style="color: var(--text); font-size: 14px; margin-bottom: 25px;">Are you sure you want to withdraw this application? This action cannot be undone.</p>
+      
+      <div style="display: flex; gap: 10px;">
+        <button style="background: #ef4444; color: white; flex: 1;">Yes, Withdraw</button>
+        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('withdrawModal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+  </script>
+</body>
+</html>
