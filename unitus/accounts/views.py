@@ -1,4 +1,15 @@
-# accounts/views.py
+import json
+
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_http_methods
+
+from accounts.models import User, Avatar
+from skills.models import Skill, UserSkill
+from skills.choices import MasteryLevel
+from moderation.models import Report
+
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -6,6 +17,291 @@ from django.shortcuts import render, redirect
 
 from .forms import RegisterForm, LoginForm
 from .models import User
+
+
+from .serialization import (
+    serialize_avatar,
+    serialize_me,
+    serialize_public_profile,
+    serialize_user_skill,
+    serialize_project_summary,
+    serialize_report,
+)
+
+ME_PATCHABLE_FIELDS = [
+    "first_name", "last_name", "gender", "birth_year",
+    "phone_number", "location", "education_background", "about_me",
+]
+
+
+def parse_json(request):
+    """Returns a dict, or None if the body isn't valid JSON."""
+    if not request.body:
+        return {}
+    try:
+        return json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+
+
+def bad_request(detail):
+    return JsonResponse({"detail": detail}, status=400)
+
+
+# ---------------------------------------------------------------------------
+# GET/PATCH /users/me
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def me_view(request):
+    user = request.user
+
+    if request.method == "GET":
+        return JsonResponse(serialize_me(user))
+
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    if "gender" in data and data["gender"] not in User.Gender.values:
+        return bad_request(f"gender must be one of {User.Gender.values}")
+
+    if "birth_year" in data:
+        try:
+            data["birth_year"] = int(data["birth_year"])
+        except (TypeError, ValueError):
+            return bad_request("birth_year must be an integer")
+
+    for field in ME_PATCHABLE_FIELDS:
+        if field in data:
+            setattr(user, field, data[field])
+
+    user.save(update_fields=ME_PATCHABLE_FIELDS)
+    return JsonResponse(serialize_me(user))
+
+
+# ---------------------------------------------------------------------------
+# PATCH /users/me/open-to-work
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["PATCH"])
+def open_to_work_view(request):
+    data = parse_json(request)
+    if data is None or "is_open_to_work" not in data:
+        return bad_request("is_open_to_work (boolean) is required")
+
+    value = data["is_open_to_work"]
+    if not isinstance(value, bool):
+        return bad_request("is_open_to_work must be a boolean")
+
+    request.user.is_open_to_work = value
+    request.user.save(update_fields=["is_open_to_work"])
+    return JsonResponse({"is_open_to_work": request.user.is_open_to_work})
+
+
+# ---------------------------------------------------------------------------
+# GET /users/me/avatar-options ,  PATCH /users/me/avatar
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET"])
+def avatar_options_view(request):
+    """Fixed, admin-defined icon set. No file upload in phase 1."""
+    avatars = Avatar.objects.all()
+    return JsonResponse([serialize_avatar(a) for a in avatars], safe=False)
+
+
+@login_required
+@require_http_methods(["PATCH"])
+def avatar_select_view(request):
+    data = parse_json(request)
+    if data is None or "avatar_icon" not in data:
+        return bad_request("avatar_icon (id or null) is required")
+
+    avatar_id = data["avatar_icon"]
+    if avatar_id is None:
+        request.user.avatar_icon = None
+    else:
+        avatar = get_object_or_404(Avatar, pk=avatar_id)
+        request.user.avatar_icon = avatar
+
+    request.user.save(update_fields=["avatar_icon"])
+    return JsonResponse(serialize_avatar(request.user.avatar_icon))
+
+
+# ---------------------------------------------------------------------------
+# GET/POST /users/me/skills ,  PATCH/DELETE /users/me/skills/:skillId
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def my_skills_view(request):
+    if request.method == "GET":
+        skills = request.user.userskill_set.select_related("skill", "skill__category").all()
+        return JsonResponse([serialize_user_skill(s) for s in skills], safe=False)
+
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    skill_id = data.get("skill")
+    mastery_level = data.get("mastery_level")
+
+    if not skill_id or not mastery_level:
+        return bad_request("skill (id) and mastery_level are required")
+    if mastery_level not in MasteryLevel.values:
+        return bad_request(f"mastery_level must be one of {MasteryLevel.values}")
+
+    skill = get_object_or_404(Skill, pk=skill_id)
+
+    if UserSkill.objects.filter(user=request.user, skill=skill).exists():
+        return bad_request("You already have this skill on your profile.")
+
+    user_skill = UserSkill.objects.create(
+        user=request.user, skill=skill, mastery_level=mastery_level
+    )
+    return JsonResponse(serialize_user_skill(user_skill), status=201)
+
+
+@login_required
+@require_http_methods(["PATCH", "DELETE"])
+def my_skill_detail_view(request, skill_id):
+    # skill_id here is the UserSkill row's pk, scoped to request.user so
+    # nobody can edit or delete someone else's skill entry.
+    user_skill = get_object_or_404(UserSkill, pk=skill_id, user=request.user)
+
+    if request.method == "DELETE":
+        user_skill.delete()
+        return HttpResponse(status=204)
+
+    data = parse_json(request)
+    if data is None or "mastery_level" not in data:
+        return bad_request("mastery_level is required")
+    if data["mastery_level"] not in MasteryLevel.values:
+        return bad_request(f"mastery_level must be one of {MasteryLevel.values}")
+
+    user_skill.mastery_level = data["mastery_level"]
+    user_skill.save(update_fields=["mastery_level"])
+    return JsonResponse(serialize_user_skill(user_skill))
+
+
+# ---------------------------------------------------------------------------
+# PATCH /users/me/work-preferences
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["PATCH"])
+def work_preferences_view(request):
+    """
+    STUB: no matching table exists yet in any of the shared models.py files.
+    The SRS only defines the is_open_to_work boolean (see open_to_work_view).
+    Confirm whether this needs its own model before implementing for real.
+    """
+    return JsonResponse(
+        {"detail": "work-preferences is not yet backed by a model — see README."},
+        status=501,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /users/:id — public profile
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET"])
+def public_profile_view(request, id):
+    user = get_object_or_404(
+        User.objects.select_related("avatar_icon", "userprivacysettings"),
+        pk=id,
+    )
+    return JsonResponse(serialize_public_profile(user))
+
+
+# ---------------------------------------------------------------------------
+# GET /users/:id/active-projects-count
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET"])
+def active_projects_count_view(request, id):
+    from projects.models import ProjectMember
+
+    user = get_object_or_404(User, pk=id)
+    count = ProjectMember.objects.filter(
+        user=user, member_status="ACTIVE"
+    ).exclude(project__state="TERMINATED").count()
+    return JsonResponse({"active_projects_count": count})
+
+
+# ---------------------------------------------------------------------------
+# GET /users/me/dashboard/projects?tab=in_progress|suspended|completed|managed|all
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET"])
+def dashboard_projects_view(request):
+    from projects.models import Project
+
+    STATE_MAP = {
+        "in_progress": "IN_PROGRESS",
+        "suspended": "SUSPENDED",
+        "completed": "TERMINATED",
+    }
+
+    tab = request.GET.get("tab", "all")
+    user = request.user
+
+    member_project_ids = user.projectmember_set.filter(
+        member_status="ACTIVE"
+    ).values_list("project_id", flat=True)
+
+    if tab == "managed":
+        qs = Project.objects.filter(pm=user).exclude(state="TERMINATED")
+    elif tab == "all":
+        qs = (Project.objects.filter(pm=user) |
+              Project.objects.filter(id__in=member_project_ids)).distinct()
+    elif tab in STATE_MAP:
+        state = STATE_MAP[tab]
+        qs = (Project.objects.filter(pm=user, state=state) |
+              Project.objects.filter(id__in=member_project_ids, state=state)).distinct()
+    else:
+        return bad_request(f"invalid tab '{tab}'")
+
+    return JsonResponse(
+        [serialize_project_summary(p, user) for p in qs], safe=False
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /users/:id/report
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["POST"])
+def report_user_view(request, id):
+    reported_user = get_object_or_404(User, pk=id)
+    if reported_user.pk == request.user.pk:
+        return bad_request("You can't report yourself.")
+
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    reason = data.get("reason")
+    if reason not in Report.Reason.values:
+        return bad_request(f"reason must be one of {Report.Reason.values}")
+
+    report = Report.objects.create(
+        reporter=request.user,
+        reported_user=reported_user,
+        reason=reason,
+        description=data.get("description"),
+        status=Report.Status.PENDING_REVIEW,
+    )
+    return JsonResponse(serialize_report(report), status=201)
+# accounts/views.py
 
 
 def register_view(request):
