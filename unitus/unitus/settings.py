@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'reviews',
     'moderation', 
     'search', 
+    'recommendation'
 ]
 
 ASGI_APPLICATION = 'unitus.asgi.application'
