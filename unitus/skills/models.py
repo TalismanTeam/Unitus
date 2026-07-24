@@ -15,6 +15,10 @@ class Skill(models.Model):
     name = models.CharField(max_length=100)
     is_custom = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_approved = models.BooleanField(
+        default=True,
+        help_text='Custom skill suggestions start unapproved and are hidden from the public catalog until an admin approves them.',
+    )
 
     class Meta:
         constraints = [
@@ -34,3 +38,6 @@ class UserSkill(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'skill'], name='unique_user_skill_pk')
         ]
+
+    def __str__(self):
+        return f'{self.user.username} - {self.skill.name} ({self.get_mastery_level_display()})'
