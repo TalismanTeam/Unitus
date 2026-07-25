@@ -219,3 +219,49 @@ class ProjectCreationFlowTests(TestCase):
         self.assertEqual(project.pm, new_pm_user)
         # old PM should now have a plain membership row so they aren't locked out
         self.assertTrue(ProjectMember.objects.filter(project=project, user=self.pm).exists())
+
+
+        
+def make_user(username, email, **extra):
+    defaults = {"birth_year": 2000}
+    defaults.update(extra)
+    return User.objects.create_user(username=username, email=email, password="pass1234", **defaults)
+ 
+ 
+class PmAutoMembershipSignalTests(TestCase):
+    def setUp(self):
+        self.pm = make_user("pm", "pm@example.com")
+ 
+    def test_pm_gets_active_membership_on_project_creation(self):
+        project = Project.objects.create(
+            pm=self.pm, title="T", short_description="s", full_description="f", duration_days=10,
+        )
+        membership = ProjectMember.objects.get(project=project, user=self.pm)
+        self.assertEqual(membership.member_status, ProjectMember.MemberStatus.ACTIVE)
+        self.assertIsNone(membership.project_role)
+ 
+    def test_no_duplicate_membership_on_subsequent_saves(self):
+        project = Project.objects.create(
+            pm=self.pm, title="T", short_description="s", full_description="f", duration_days=10,
+        )
+        project.title = "Updated title"
+        project.save()
+        self.assertEqual(ProjectMember.objects.filter(project=project, user=self.pm).count(), 1)
+ 
+    def test_does_not_overwrite_membership_if_already_resigned(self):
+        # If the PM's row was somehow changed (e.g. RESIGNED) and the
+        # project is saved again for an unrelated reason, get_or_create
+        # should NOT flip it back to ACTIVE — that would be surprising and
+        # could undo a legitimate state change.
+        project = Project.objects.create(
+            pm=self.pm, title="T", short_description="s", full_description="f", duration_days=10,
+        )
+        membership = ProjectMember.objects.get(project=project, user=self.pm)
+        membership.member_status = ProjectMember.MemberStatus.RESIGNED
+        membership.save(update_fields=["member_status"])
+ 
+        project.title = "Updated again"
+        project.save()
+ 
+        membership.refresh_from_db()
+        self.assertEqual(membership.member_status, ProjectMember.MemberStatus.RESIGNED)
