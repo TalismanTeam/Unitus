@@ -25,6 +25,8 @@ urlpatterns = [
     path('search/', include('search.urls')),
     path('collaboration/', include('collaboration.urls')),
     path('', include('reviews.urls')),
+    path('chat/', include('chat.urls')),
+    path('skills/', include('skills.urls')),
 
     path('', lambda request: redirect('accounts:login'), name='home'),
 ]
