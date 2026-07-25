@@ -173,16 +173,16 @@ class CreateReviewTests(TestCase):
         self.assertEqual(len(response.json()["tags"]), 1)
 
     def test_pm_and_member_can_review_each_other(self):
+        # Project.pm is auto-enrolled as an ACTIVE ProjectMember via a
+        # post_save signal on Project (see projects/signals.py), so no
+        # manual make_member() call is needed for the PM here.
         self.client.force_login(self.pm)
         response = self.client.post(
             self.url,
             data=json.dumps({"project_id": self.project.id, "reviewee_id": self.reviewee.id, "rating": 3, "tag_ids": []}),
             content_type="application/json",
         )
-        # PM was never added as a ProjectMember row in setUp — this documents
-        # that a PM must also have a ProjectMember row to be reviewable/review,
-        # matching how ProjectMember is the single source of "was on this team".
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 201)
 
 
 # ---------------------------------------------------------------------------

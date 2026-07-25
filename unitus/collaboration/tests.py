@@ -439,7 +439,12 @@ class TicketRespondViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         membership = ProjectMember.objects.get(project=self.project, user=invitee)
         self.assertEqual(membership.project_role_id, role2.id)
-        self.assertFalse(ProjectMember.objects.filter(project=self.project, user=self.pm).exists())
+        # The PM is auto-enrolled as a ProjectMember via a signal on Project
+        # creation (see projects/signals.py), so a row for the PM legitimately
+        # exists here — what matters is that approving this invitation didn't
+        # touch it or assign the PM to the invited role.
+        pm_membership = ProjectMember.objects.get(project=self.project, user=self.pm)
+        self.assertNotEqual(pm_membership.project_role_id, role2.id)
 
     def test_cannot_approve_when_role_at_capacity(self):
         # fill the only slot with someone else first
