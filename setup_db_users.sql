@@ -5,12 +5,11 @@ CREATE DATABASE IF NOT EXISTS unitus_db
 DROP USER IF EXISTS 'db_admin'@'localhost';
 DROP USER IF EXISTS 'app_backend'@'localhost';
 
-CREATE USER 'db_admin'@'localhost' IDENTIFIED BY '12345';
-CREATE USER 'app_backend'@'localhost' IDENTIFIED BY '12345';
+-- replace your own passwords from .env
+CREATE USER 'db_admin'@'localhost' IDENTIFIED BY 'YourAdminSecurePassword_fromEnv';
+CREATE USER 'app_backend'@'localhost' IDENTIFIED BY 'YourAppSecurePassword_fromEnv';
 
 GRANT ALL PRIVILEGES ON unitus_db.* TO 'db_admin'@'localhost';
-GRANT ALL, INSERT, UPDATE, DELETE ON unitus_db.* TO 'app_backend'@'localhost';
-
-
+GRANT SELECT, INSERT, UPDATE, DELETE ON unitus_db.* TO 'app_backend'@'localhost';
 
 FLUSH PRIVILEGES;
