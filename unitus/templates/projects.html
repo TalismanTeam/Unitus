@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
     <meta charset="UTF-8">
@@ -25,11 +25,11 @@
     <!-- Page Header -->
     <div class="page-header">
 
-      <h2>مدیریت پروژه‌ها</h2>
+      <h2>Project Management</h2>
 
       <!-- PM-001: Create Project -->
-      <button type="button">
-        ایجاد پروژه جدید
+      <button type="button" onclick="location.href='project_create.html'">
+        Create New Project
       </button>
 
     </div>
@@ -44,32 +44,25 @@
 
         <!-- PM-002: View Project -->
         <h3>
-          عنوان پروژه
+          Project Title
         </h3>
 
         <p>
-          توضیحات پروژه
+          Project description
         </p>
 
 
         <!-- PM-004: Project Status -->
         <p>
-          <strong>وضعیت پروژه:</strong>
-          وضعیت
-        </p>
-
-
-        <!-- PM-006: Project Visibility -->
-        <p>
-          <strong>قابلیت مشاهده:</strong>
-          عمومی / خصوصی
+          <strong>Status:</strong>
+          <span id="status-label-1">Recruiting</span>
         </p>
 
 
         <!-- PM-007: Project Ownership -->
         <p>
-          <strong>مالک پروژه:</strong>
-          نام مالک
+          <strong>Owner:</strong>
+          Owner name
         </p>
 
 
@@ -78,22 +71,17 @@
 
           <!-- PM-002: View Project -->
           <button type="button">
-            مشاهده پروژه
+            View Project
           </button>
 
           <!-- PM-003: Edit Project -->
           <button type="button">
-            ویرایش پروژه
+            Edit Project
           </button>
 
-          <!-- PM-005: Archive / Close Project -->
-          <button type="button">
-            بستن / آرشیو پروژه
-          </button>
-
-          <!-- PM-008: Delete Project -->
-          <button type="button">
-            حذف پروژه
+          <!-- PM-004/PM-005: Change Status -->
+          <button type="button" onclick="openStatusModal(1)">
+            Change Status
           </button>
 
         </div>
@@ -105,44 +93,35 @@
       <div class="list-item">
 
         <h3>
-          عنوان پروژه
+          Project Title
         </h3>
 
         <p>
-          توضیحات پروژه
+          Project description
         </p>
 
         <p>
-          <strong>وضعیت پروژه:</strong>
-          وضعیت
+          <strong>Status:</strong>
+          <span id="status-label-2">In Progress</span>
         </p>
 
         <p>
-          <strong>قابلیت مشاهده:</strong>
-          عمومی / خصوصی
-        </p>
-
-        <p>
-          <strong>مالک پروژه:</strong>
-          نام مالک
+          <strong>Owner:</strong>
+          Owner name
         </p>
 
         <div class="project-actions">
 
           <button type="button">
-            مشاهده پروژه
+            View Project
           </button>
 
           <button type="button">
-            ویرایش پروژه
+            Edit Project
           </button>
 
-          <button type="button">
-            بستن / آرشیو پروژه
-          </button>
-
-          <button type="button">
-            حذف پروژه
+          <button type="button" onclick="openStatusModal(2)">
+            Change Status
           </button>
 
         </div>
@@ -153,6 +132,85 @@
     </div>
 
   </div>
+
+
+  <!-- PM-004/PM-005: Status Change Modal -->
+  <div class="modal-overlay" id="statusModalOverlay">
+    <div class="modal-box">
+
+      <h3>Change Project Status</h3>
+
+      <label>New status</label>
+      <select id="newStatusSelect" onchange="toggleTerminationReason()">
+        <option value="recruiting">Recruiting</option>
+        <option value="in_progress">In Progress</option>
+        <option value="suspended">Suspended</option>
+        <option value="terminated">Terminated / Completed</option>
+      </select>
+
+      <!-- Shown only when "Terminated / Completed" is selected -->
+      <div id="terminationReasonBlock" class="hidden">
+        <label>Termination reason</label>
+        <select id="terminationReasonSelect">
+          <option value="success">Successful completion</option>
+          <option value="internal_issues">Internal team issues</option>
+          <option value="team_failure">Team failure</option>
+          <option value="owner_withdrawal">Owner withdrawal</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <p class="hint">
+        This action requires confirmation. Members will be notified of the status change.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" onclick="closeStatusModal()">Cancel</button>
+        <button type="button" onclick="confirmStatusChange()">Confirm</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script>
+    let currentProjectId = null;
+    const STATUS_LABELS = {
+      recruiting: "Recruiting",
+      in_progress: "In Progress",
+      suspended: "Suspended",
+      terminated: "Terminated / Completed"
+    };
+
+    function openStatusModal(projectId) {
+      currentProjectId = projectId;
+      document.getElementById('statusModalOverlay').classList.add('visible');
+      toggleTerminationReason();
+    }
+
+    function closeStatusModal() {
+      document.getElementById('statusModalOverlay').classList.remove('visible');
+      currentProjectId = null;
+    }
+
+    function toggleTerminationReason() {
+      const isTerminated = document.getElementById('newStatusSelect').value === 'terminated';
+      document.getElementById('terminationReasonBlock').classList.toggle('hidden', !isTerminated);
+    }
+
+    function confirmStatusChange() {
+      // In Django: this will POST { project_id, new_status, termination_reason } to the server
+      const status = document.getElementById('newStatusSelect').value;
+      const reason = document.getElementById('terminationReasonSelect').value;
+      const label = STATUS_LABELS[status];
+
+      const target = document.getElementById('status-label-' + currentProjectId);
+      if (target) target.innerText = label;
+
+      alert('Status changed to: ' + label + (status === 'terminated' ? ' (Reason: ' + reason + ')' : ''));
+      closeStatusModal();
+    }
+  </script>
 
 </body>
 </html>

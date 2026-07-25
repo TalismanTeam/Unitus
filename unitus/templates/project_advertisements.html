@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
     <meta charset="UTF-8">
@@ -28,13 +28,14 @@
     <div class="page-header">
 
       <h2>
-        مدیریت آگهی‌های پروژه
+        Project Advertisements
       </h2>
 
-      <!-- AM-001: Create Advertisement -->
-      <button type="button">
-        ایجاد آگهی جدید
-      </button>
+      <p class="hint">
+        Advertisements are generated automatically for every open role in a project
+        and removed automatically once the role is filled. They cannot be created,
+        edited, or deleted manually here.
+      </p>
 
     </div>
 
@@ -44,67 +45,36 @@
 
 
       <!-- Advertisement Item -->
+      <!-- AM-002: View Advertisement -->
+      <!-- Ads only expose the project's short description and this role's -->
+      <!-- description, per the spec: full project details stay private. -->
       <div class="list-item">
 
-        <!-- AM-002: View Advertisement -->
         <h3>
-          عنوان آگهی
+          Role: Front-end Developer
         </h3>
 
         <p>
-          توضیحات آگهی
+          <strong>Project short description:</strong>
+          Project short description shown here
         </p>
 
-
-        <!-- AM-004: Advertisement Status -->
         <p>
-          <strong>وضعیت آگهی:</strong>
-          وضعیت
+          <strong>Role description:</strong>
+          Role description / responsibilities shown here
         </p>
 
-
-        <!-- AM-005: Role Definition -->
+        <!-- AM-004: Advertisement Status (read-only, derived automatically) -->
         <p>
-          <strong>نقش موردنیاز:</strong>
-          نقش
+          <strong>Status:</strong>
+          Open
         </p>
 
-
-        <!-- AM-006: Capacity Management -->
-        <p>
-          <strong>ظرفیت موردنیاز:</strong>
-          تعداد
-        </p>
-
-
-        <!-- AM-007: Required Skills -->
-        <p>
-          <strong>مهارت‌های موردنیاز:</strong>
-          مهارت‌ها
-        </p>
-
-
-        <!-- Advertisement Actions -->
         <div class="advertisement-actions">
 
           <!-- AM-002: View Advertisement -->
           <button type="button">
-            مشاهده آگهی
-          </button>
-
-          <!-- AM-003: Edit Advertisement -->
-          <button type="button">
-            ویرایش آگهی
-          </button>
-
-          <!-- AM-004: Advertisement Status -->
-          <button type="button">
-            تغییر وضعیت
-          </button>
-
-          <!-- AM-008: Delete Advertisement -->
-          <button type="button">
-            حذف آگهی
+            View Advertisement
           </button>
 
         </div>
@@ -116,50 +86,28 @@
       <div class="list-item">
 
         <h3>
-          عنوان آگهی
+          Role: Backend Developer
         </h3>
 
         <p>
-          توضیحات آگهی
+          <strong>Project short description:</strong>
+          Project short description shown here
         </p>
 
         <p>
-          <strong>وضعیت آگهی:</strong>
-          وضعیت
+          <strong>Role description:</strong>
+          Role description / responsibilities shown here
         </p>
 
         <p>
-          <strong>نقش موردنیاز:</strong>
-          نقش
+          <strong>Status:</strong>
+          Open
         </p>
-
-        <p>
-          <strong>ظرفیت موردنیاز:</strong>
-          تعداد
-        </p>
-
-        <p>
-          <strong>مهارت‌های موردنیاز:</strong>
-          مهارت‌ها
-        </p>
-
 
         <div class="advertisement-actions">
 
           <button type="button">
-            مشاهده آگهی
-          </button>
-
-          <button type="button">
-            ویرایش آگهی
-          </button>
-
-          <button type="button">
-            تغییر وضعیت
-          </button>
-
-          <button type="button">
-            حذف آگهی
+            View Advertisement
           </button>
 
         </div>
