@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'rest_framework',
+
     'accounts',
     'skills',
     'projects',
@@ -54,6 +56,7 @@ INSTALLED_APPS = [
     'reviews',
     'moderation', 
     'search', 
+    'recommendation'
 ]
 
 ASGI_APPLICATION = 'unitus.asgi.application'

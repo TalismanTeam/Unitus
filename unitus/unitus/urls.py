@@ -23,6 +23,7 @@ urlpatterns = [
     path('auth/', include('accounts.urls')),
     path('projects/', include('projects.urls')),
     path('search/', include('search.urls')),
+    path('recommendations/', include('recommendation.urls')),
     path('collaboration/', include('collaboration.urls')),
     path('', include('reviews.urls')),
     path('chat/', include('chat.urls')),
