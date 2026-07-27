@@ -1,22 +1,51 @@
-<!-- safhe asli (landing)-->
+
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-  <link rel="stylesheet" href="styles.css">
-  <title>Unitas - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas - Home</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <a href="index.html" class="active">Home</a>
-      <a href="auth.html">Auth</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="settings.html">Settings</a>
-    </nav>
-    <h1>Home</h1>
-    <input type="text" id="searchInput" placeholder="جستجوی پروژه...">
-    <button onclick="alert('جستجو در دیتابیس...')">جستجو</button>
-  </div>
+    <div class="container">
+        <nav>
+            <a href="index.html" class="active">Home</a>
+            <a href="auth.html">Login / Register</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="settings.html">Settings</a>
+        </nav>
+
+        <header class="hero-section">
+            <h1>Welcome to Unitas</h1>
+            <p>Connect, Collaborate, and Create.</p>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for projects, users, or keywords...">
+                <button type="button">Search</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="featured-projects">
+                <h2>Featured Projects</h2>
+                <div class="card">
+                    <h3>Project Alpha</h3>
+                    <p>Looking for backend developers proficient in Django.</p>
+                </div>
+                <div class="card">
+                    <h3>Project Beta</h3>
+                    <p>Open source frontend initiative using modern CSS.</p>
+                </div>
+            </section>
+
+            <section class="advertisements">
+                <h2>Advertisements</h2>
+                <div class="card">
+                    <h3>Need UI/UX Designer</h3>
+                    <p>Contact for project details and collaboration.</p>
+                </div>
+            </section>
+        </main>
+    </div>
 </body>
 </html>

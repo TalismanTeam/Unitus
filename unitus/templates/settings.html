@@ -1,24 +1,65 @@
 
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
-  <link rel="stylesheet" href="styles.css">
-  <title>Unitas - Settings</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas - Profile Settings</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<meta charset="UTF-8">
 <body>
-  <div class="container">
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="auth.html">Auth</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="settings.html" class="active">Settings</a>
-    </nav>
-    <h2>تنظیمات حساب</h2>
-    <form onsubmit="event.preventDefault(); alert('تنظیمات ذخیره شد')">
-      <input type="email" value="user@unitas.com">
-      <button type="submit">ذخیره</button>
-    </form>
-  </div>
+    <div class="container">
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="auth.html">Login / Register</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="settings.html" class="active">Settings</a>
+        </nav>
+
+        <main>
+            <h1>Profile Settings</h1>
+            <form action="#" method="get">
+                <section class="personal-data">
+                    <h2>Personal Data</h2>
+                    <input type="text" value="John Doe" placeholder="Full Name">
+                    <input type="email" value="john@example.com" placeholder="Email">
+                    <textarea placeholder="Bio">Software Engineering student and developer.</textarea>
+                </section>
+
+                <section class="skill-management" style="margin-top: 2rem;">
+                    <h2>Skill Management</h2>
+                    <div>
+                        <label>Python:</label>
+                        <select>
+                            <option>Beginner</option>
+                            <option>Intermediate</option>
+                            <option>Advanced</option>
+                            <option>Expert</option>
+                            <option selected>Master</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <label>HTML/CSS:</label>
+                        <select>
+                            <option>Beginner</option>
+                            <option selected>Intermediate</option>
+                            <option>Advanced</option>
+                            <option>Expert</option>
+                            <option>Master</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="work-status" style="margin-top: 2rem;">
+                    <h2>Status</h2>
+                    <label>
+                        <input type="checkbox" checked> Open to Work
+                    </label>
+                </section>
+
+                <button type="submit" style="margin-top: 2rem;" onclick="event.preventDefault(); alert('Settings Saved Successfully!');">Save Changes</button>
+            </form>
+        </main>
+    </div>
 </body>
 </html>

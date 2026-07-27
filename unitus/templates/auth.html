@@ -1,25 +1,44 @@
 
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-  <link rel="stylesheet" href="styles.css">
-  <title>Unitas - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas - Authentication</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="auth.html" class="active">Auth</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="settings.html">Settings</a>
-    </nav>
-    <h2>ورود به حساب</h2>
-    <form method="POST"> <!-- در جنگو اینجا action و CSRF اضافه می‌شود -->
-      <input type="text" name="username" placeholder="نام کاربری">
-      <input type="password" name="password" placeholder="رمز عبور">
-      <button type="submit" onclick="event.preventDefault(); alert('ارسال فرم به جنگو')">ورود</button>
-    </form>
-  </div>
+    <div class="container">
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="auth.html" class="active">Login / Register</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="settings.html">Settings</a>
+        </nav>
+
+        <main class="auth-container">
+            <section class="login-form">
+                <h2>Login</h2>
+                <form action="dashboard.html">
+                    <input type="text" placeholder="Username" required>
+                    <input type="password" placeholder="Password" required>
+                    <label><input type="checkbox"> Remember Me</label>
+                    <button type="submit">Login</button>
+                </form>
+            </section>
+
+            <hr>
+
+            <section class="register-form">
+                <h2>Register</h2>
+                <form action="dashboard.html">
+                    <input type="text" placeholder="Username" required>
+                    <input type="email" placeholder="Email" required>
+                    <input type="password" placeholder="Password" required>
+                    <button type="submit">Register</button>
+                </form>
+            </section>
+        </main>
+    </div>
 </body>
 </html>

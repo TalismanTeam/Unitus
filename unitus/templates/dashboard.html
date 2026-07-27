@@ -1,32 +1,47 @@
 
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-  <link rel="stylesheet" href="styles.css">
-  <title>Unitas - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="auth.html">Auth</a>
-      <a href="dashboard.html" class="active">Dashboard</a>
-      <a href="settings.html">Settings</a>
-    </nav>
-    <h2>پروژه‌های من</h2>
-    <div id="list">
-      <div class="list-item">پروژه نمونه ۱</div>
+    <div class="container">
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="auth.html">Login / Register</a>
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="settings.html">Settings</a>
+        </nav>
+
+        <main>
+            <h1>User Dashboard</h1>
+
+            <div class="tabs">
+                <button class="tab-btn active">In Progress</button>
+                <button class="tab-btn">Suspended</button>
+                <button class="tab-btn">Completed/Terminated</button>
+                <button class="tab-btn">My Managed Projects</button>
+                <button class="tab-btn">All</button>
+            </div>
+
+            <div class="tab-content">
+                <h2>In Progress Projects</h2>
+                <ul>
+                    <li><strong>Project Alpha</strong> - Role: Developer</li>
+                </ul>
+            </div>
+
+            <section class="activity-tracker" style="margin-top: 2rem;">
+                <h2>Recent Activity</h2>
+                <ul>
+                    <li>You joined "Project Alpha" 2 days ago.</li>
+                    <li>You updated your profile skills.</li>
+                </ul>
+            </section>
+        </main>
     </div>
-    <button onclick="addItem()">افزودن پروژه جدید</button>
-  </div>
-  <script>
-    function addItem() {
-      const div = document.createElement('div');
-      div.className = 'list-item';
-      div.innerText = 'پروژه جدید (پویا)';
-      document.getElementById('list').appendChild(div);
-    }
-  </script>
 </body>
 </html>
