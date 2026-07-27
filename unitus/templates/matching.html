@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Unitas - Matchmaking & Recommendations</title>
+  <style>
+    .match-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; overflow-x: auto; }
+    .match-tab { background: transparent; color: var(--muted); border: none; font-size: 15px; padding: 10px 15px; cursor: pointer; border-radius: 6px; transition: 0.3s; white-space: nowrap; }
+    .match-tab.active { background: var(--surface-2); color: var(--accent); font-weight: bold; }
+    
+    .layout-grid { display: grid; grid-template-columns: 1fr 300px; gap: 25px; align-items: start; }
+    @media (max-width: 768px) { .layout-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 1100px;">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="userprofile.html">Profile</a>
+      <a href="search.html">Search</a>
+      <a href="matching.html" class="active">Matchmaking</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <h1 style="margin: 0 0 5px 0; color: var(--text); font-size: 22px;">Smart Recommendations</h1>
+        <p style="margin: 0; color: var(--muted); font-size: 14px;">Projects, job ads, and potential teammates tailored to your skills.</p>
+      </div>
+      <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);">⚙️ Recommendation Preferences</button>
+    </div>
+
+    <div class="layout-grid">
+      <main>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
+          <div class="match-tabs">
+            <button class="match-tab active">Recommended Projects</button>
+            <button class="match-tab">Recommended Ads</button>
+            <button class="match-tab">Recommended Teammates</button>
+            <button class="match-tab">Candidates (For PMs)</button>
+          </div>
+
+          <div id="recommendationsList" style="text-align: center; padding: 40px 20px;">
+            <p style="color: var(--muted); font-size: 15px; margin: 0;">No new recommendations found based on your profile at this time.</p>
+          </div>
+        </div>
+      </main>
+
+      <aside>
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">About Match Score</h3>
+          <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">
+            The match score is calculated based on the following criteria:
+          </p>
+          <ul style="color: var(--muted); font-size: 13px; padding-left: 20px; line-height: 1.6;">
+            <li>Overlap between your skills and project requirements</li>
+            <li>Mastery level in your skills matrix</li>
+            <li>Open to Work status</li>
+          </ul>
+        </div>
+
+        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
+          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">Recommendation Preferences</h3>
+          <form id="preferencesForm">
+            <label style="display: block; color: var(--text); font-weight: bold; margin-bottom: 10px; font-size: 14px;">Interests & Categories:</label>
+            <select style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-bottom: 15px;">
+              <option value="" disabled selected style="background: var(--surface);">Select preferred category</option>
+              <option style="background: var(--surface);">Web Development</option>
+              <option style="background: var(--surface);">Artificial Intelligence</option>
+              <option style="background: var(--surface);">UI/UX Design</option>
+            </select>
+
+            <label style="display: block; color: var(--text); font-weight: bold; margin-bottom: 10px; font-size: 14px;">Collaboration Status:</label>
+            <label style="display: block; color: var(--text); font-size: 14px; margin-bottom: 15px; cursor: pointer;">
+              <input type="checkbox" style="width: auto; margin: 0;"> Receive recommendations for new projects
+            </label>
+
+            <button type="submit" style="width: 100%;">Save Preferences</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
