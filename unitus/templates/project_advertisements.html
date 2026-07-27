@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <title>Unitas - Project Advertisement Management</title>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- Navigation -->
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="auth.html">Auth</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="projects.html">Projects</a>
+      <a href="project_advertisements.html" class="active">
+        Advertisements
+      </a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+
+    <!-- Page Header -->
+    <div class="page-header">
+
+      <h2>
+        Project Advertisements
+      </h2>
+
+      <p class="hint">
+        Advertisements are generated automatically for every open role in a project
+        and removed automatically once the role is filled. They cannot be created,
+        edited, or deleted manually here.
+      </p>
+
+    </div>
+
+
+    <!-- Advertisement List -->
+    <div id="advertisement-list">
+
+
+      <!-- Advertisement Item -->
+      <!-- AM-002: View Advertisement -->
+      <!-- Ads only expose the project's short description and this role's -->
+      <!-- description, per the spec: full project details stay private. -->
+      <div class="list-item">
+
+        <h3>
+          Role: Front-end Developer
+        </h3>
+
+        <p>
+          <strong>Project short description:</strong>
+          Project short description shown here
+        </p>
+
+        <p>
+          <strong>Role description:</strong>
+          Role description / responsibilities shown here
+        </p>
+
+        <!-- AM-004: Advertisement Status (read-only, derived automatically) -->
+        <p>
+          <strong>Status:</strong>
+          Open
+        </p>
+
+        <div class="advertisement-actions">
+
+          <!-- AM-002: View Advertisement -->
+          <button type="button">
+            View Advertisement
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- Another Advertisement Item -->
+      <div class="list-item">
+
+        <h3>
+          Role: Backend Developer
+        </h3>
+
+        <p>
+          <strong>Project short description:</strong>
+          Project short description shown here
+        </p>
+
+        <p>
+          <strong>Role description:</strong>
+          Role description / responsibilities shown here
+        </p>
+
+        <p>
+          <strong>Status:</strong>
+          Open
+        </p>
+
+        <div class="advertisement-actions">
+
+          <button type="button">
+            View Advertisement
+          </button>
+
+        </div>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+</body>
+</html>
