@@ -48,6 +48,20 @@ def bad_request(detail):
     return JsonResponse({"detail": detail}, status=400)
 
 
+def get_average_rating(user):
+    """
+    Average of all ratings on Review rows where `user` is the reviewee.
+    Computed on the fly (no stored field) via a DB-side AVG aggregate.
+    Returns None if the user has no reviews yet.
+    """
+    from django.db.models import Avg
+    from reviews.models import Review
+
+    result = Review.objects.filter(reviewee=user).aggregate(avg=Avg("rating"))
+    avg = result["avg"]
+    return round(avg, 1) if avg is not None else None
+
+
 # ---------------------------------------------------------------------------
 # GET/PATCH /users/me
 # ---------------------------------------------------------------------------
@@ -58,7 +72,9 @@ def me_view(request):
     user = request.user
 
     if request.method == "GET":
-        return JsonResponse(serialize_me(user))
+        data = serialize_me(user)
+        data["average_rating"] = get_average_rating(user)
+        return JsonResponse(data)
 
     data = parse_json(request)
     if data is None:
@@ -216,7 +232,9 @@ def public_profile_view(request, id):
         User.objects.select_related("avatar_icon", "userprivacysettings"),
         pk=id,
     )
-    return JsonResponse(serialize_public_profile(user))
+    data = serialize_public_profile(user)
+    data["average_rating"] = get_average_rating(user)
+    return JsonResponse(data)
 
 
 # ---------------------------------------------------------------------------
