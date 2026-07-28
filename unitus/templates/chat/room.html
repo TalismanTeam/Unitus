@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <title>Unitus - Chat Room #{{ room.id }}</title>
+</head>
+<body>
+<div class="container">
+    <div class="layout-grid">
+        {% include 'chat/_sidebar.html' %}
+
+        <main class="chat-window">
+            <div class="chat-header">
+                <h3>
+                    {% if room.type == 'GROUP' %}
+                        {{ room.project.title|default:"Group Chat" }}
+                    {% else %}
+                        Direct Message
+                    {% endif %}
+                </h3>
+                {% if room.is_closed %}<span class="badge-closed">READ-ONLY</span>{% endif %}
+            </div>
+
+            <div class="chat-history" id="chatHistory"
+                 data-mode="room"
+                 data-room-id="{{ room.id }}"
+                 data-ws-path="{{ websocket_path }}"
+                 data-current-user-id="{{ request.user.id }}"
+                 data-oldest-loaded-id="{% if messages %}{{ messages.0.id }}{% endif %}">
+
+                <div class="load-more-wrapper">
+                    <button id="loadOlderBtn" class="load-more-btn" type="button" style="display:none;">Load older messages</button>
+                </div>
+
+                {% for msg in messages %}
+                    <div class="msg-bubble {% if msg.sender_id == request.user.id %}msg-sent{% else %}msg-received{% endif %}"
+                         data-message-id="{{ msg.id }}" data-sent-at="{{ msg.sent_at|date:'c' }}">
+                        <span class="msg-text">{{ msg.content }}</span>
+                        <div class="msg-meta">
+                            <span class="msg-time">{{ msg.sent_at|date:"H:i" }}</span>
+                            {% if msg.sender_id == request.user.id %}
+                                <span class="msg-tick {% if room.type == 'DIRECT' and other_last_read_at and msg.sent_at <= other_last_read_at %}tick-read{% else %}tick-unread{% endif %}">
+                                    {% if room.type == 'DIRECT' and other_last_read_at and msg.sent_at <= other_last_read_at %}✓✓{% else %}✓{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if room.is_closed %}
+                <div class="archived-banner">
+                    This conversation is closed because the related project has ended. New messages cannot be sent.
+                </div>
+            {% else %}
+                <form class="chat-input-area" id="chatInputArea">
+                    <textarea id="chatInput" placeholder="Type your message..." autocomplete="off" rows="1"></textarea>
+                    <button type="submit" id="chatSendBtn">Send</button>
+                </form>
+            {% endif %}
+        </main>
+    </div>
+</div>
+<script src="{% static 'js/chat.js' %}"></script>
+</body>
+</html>

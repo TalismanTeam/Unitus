@@ -74,6 +74,10 @@ def is_active_participant(room_id, user_id):
     ).exists()
 
 
+def is_room_closed(room_id):
+    return ChatRoom.objects.filter(id=room_id, is_closed=True).exists()
+
+
 def soft_leave_room(room_id, user_id):
     """DELETE /conversations/:id equivalent — hides the conversation for this user only."""
     ChatParticipant.objects.filter(room_id=room_id, user_id=user_id).update(
@@ -92,18 +96,11 @@ def mark_room_read(room_id, user_id):
 # ---------------------------------------------------------------------------
 
 def open_group_chat_for_project(project):
-    """
-    Called when a project's state transitions into IN_PROGRESS for the
-    first time. Creates the GROUP ChatRoom (if missing) and adds all
-    currently active members, plus the PM, as participants.
-    """
     room, _ = ChatRoom.objects.get_or_create(project=project, type=ChatRoom.Type.GROUP)
 
     active_member_ids = set(
         project.projectmember_set.filter(member_status='ACTIVE').values_list('user_id', flat=True)
     )
-    # The PM might have no technical role in ProjectMember, but must
-    # always be part of the group chat.
     active_member_ids.add(project.pm_id)
 
     for user_id in active_member_ids:
@@ -120,19 +117,13 @@ def open_group_chat_for_project(project):
 
 
 def close_group_chat_for_project(project):
-    """Called when a project reaches TERMINATED. Room becomes read-only."""
     ChatRoom.objects.filter(project=project, type=ChatRoom.Type.GROUP).update(is_closed=True)
 
 
 def sync_participant_for_membership_change(project, user_id, member_status):
-    """
-    Keeps the GROUP chat roster in sync with projects_projectmember
-    changes that happen AFTER the group chat already exists (e.g.
-    someone resigns, or a new member joins mid-project).
-    """
     room = ChatRoom.objects.filter(project=project, type=ChatRoom.Type.GROUP).first()
     if room is None:
-        return  # project isn't IN_PROGRESS yet, nothing to sync
+        return
 
     if member_status == 'ACTIVE':
         participant, created = ChatParticipant.objects.get_or_create(
@@ -143,7 +134,7 @@ def sync_participant_for_membership_change(project, user_id, member_status):
             participant.is_active = True
             participant.left_at = None
             participant.save(update_fields=['is_active', 'left_at'])
-    else:  # RESIGNED / REMOVED
+    else:
         ChatParticipant.objects.filter(room=room, user_id=user_id).update(
             is_active=False, left_at=timezone.now()
         )
@@ -154,11 +145,6 @@ def sync_participant_for_membership_change(project, user_id, member_status):
 # ---------------------------------------------------------------------------
 
 def get_inbox_for_user(user):
-    """
-    Returns one dict per active conversation the user belongs to, sorted
-    by most recent message first, with display name, last message
-    preview, and unread count.
-    """
     participants = (
         ChatParticipant.objects.filter(user=user, is_active=True)
         .select_related('room', 'room__project')
@@ -204,10 +190,6 @@ def get_inbox_for_user(user):
 
 
 def get_room_messages(room_id, before_id=None, limit=30):
-    """
-    Keyset (cursor) pagination: returns up to `limit` messages older than
-    `before_id`, oldest-first (ready to append to the top of the chat).
-    """
     qs = Message.objects.filter(room_id=room_id).select_related('sender').order_by('-id')
     if before_id:
         qs = qs.filter(id__lt=before_id)
@@ -215,3 +197,15 @@ def get_room_messages(room_id, before_id=None, limit=30):
     messages = list(qs[:limit])
     messages.reverse()
     return messages
+
+
+def get_other_participant_last_read(room, user):
+    """
+    For DIRECT rooms only: the other participant's last_read_at, used to
+    render the initial double-check marks (✓✓) before any live
+    'read_receipt' WebSocket event has arrived.
+    """
+    if room.type != ChatRoom.Type.DIRECT:
+        return None
+    other = ChatParticipant.objects.filter(room=room).exclude(user=user).first()
+    return other.last_read_at if other else None

@@ -1,6 +1,8 @@
+# chat/views.py
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
@@ -11,12 +13,14 @@ from .serialization import serialize_message
 
 
 @login_required
+@ensure_csrf_cookie
 def inbox_view(request):
     conversations = services.get_inbox_for_user(request.user)
     return render(request, 'chat/inbox.html', {'conversations': conversations})
 
 
 @login_required
+@ensure_csrf_cookie
 def room_view(request, room_id):
     room = get_object_or_404(ChatRoom, id=room_id)
 
@@ -25,21 +29,22 @@ def room_view(request, room_id):
 
     services.mark_room_read(room.id, request.user.id)
     messages = services.get_room_messages(room.id)
+    conversations = services.get_inbox_for_user(request.user)
+    other_last_read_at = services.get_other_participant_last_read(room, request.user)
 
     context = {
         'room': room,
         'messages': messages,
+        'conversations': conversations,
+        'other_last_read_at': other_last_read_at,
         'websocket_path': f'/ws/chat/room/{room.id}/',
     }
     return render(request, 'chat/room.html', context)
 
 
 @login_required
+@ensure_csrf_cookie
 def start_direct_chat_view(request, user_id):
-    """
-    Target of the "Start Chat" button on a user's public profile.
-    Does NOT create a ChatRoom — only the first sent message does that.
-    """
     other_user = get_object_or_404(User, id=user_id, is_active=True)
 
     if other_user.id == request.user.id:
@@ -56,6 +61,7 @@ def start_direct_chat_view(request, user_id):
 
     context = {
         'other_user': other_user,
+        'conversations': services.get_inbox_for_user(request.user),
         'websocket_path': f'/ws/chat/user/{other_user.id}/',
     }
     return render(request, 'chat/new_direct_chat.html', context)
@@ -63,7 +69,6 @@ def start_direct_chat_view(request, user_id):
 
 @login_required
 def messages_history_api(request, room_id):
-    """AJAX endpoint for the 'load older messages' button (keyset pagination)."""
     if not services.is_active_participant(room_id, request.user.id):
         return HttpResponseForbidden()
 
@@ -77,7 +82,6 @@ def messages_history_api(request, room_id):
 @login_required
 @require_POST
 def delete_conversation_view(request, room_id):
-    """DELETE /conversations/:id equivalent — soft delete, only for this user."""
     if not services.is_active_participant(room_id, request.user.id):
         return HttpResponseForbidden()
 

@@ -29,30 +29,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+// ==========================================
+  // 2. CHAT MODULE (WebSockets & Read Receipts) ------> moved to chat.js
   // ==========================================
-  // 2. CHAT MODULE
-  // ==========================================
-  const chatHistory = document.getElementById('chatHistory');
-  if (chatHistory) {
-    console.log("[Unitas] Chat module initialized.");
-
-    // Handle sending a message
-    const chatInputArea = document.querySelector('.chat-input-area');
-    if (chatInputArea) {
-      const sendBtn = chatInputArea.querySelector('button');
-      const textArea = chatInputArea.querySelector('textarea');
-      
-      sendBtn.addEventListener('click', () => {
-        const text = textArea.value.trim();
-        if (text) {
-          // TODO: Call sendMessage() from storage layer here
-          console.log("Message sent:", text);
-          textArea.value = ''; // Clear input
-        }
-      });
-    }
-  }
-
+ 
   // ==========================================
   // 3. TICKET MANAGEMENT MODULE
   // ==========================================
