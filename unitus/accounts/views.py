@@ -319,7 +319,6 @@ def report_user_view(request, id):
         status=Report.Status.PENDING_REVIEW,
     )
     return JsonResponse(serialize_report(report), status=201)
-# accounts/views.py
 
 
 def register_view(request):
@@ -339,7 +338,7 @@ def register_view(request):
     else:
         form = RegisterForm()
 
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'register.html', {'form': form})
 
 
 def login_view(request):
@@ -354,15 +353,15 @@ def login_view(request):
             identifier = form.cleaned_data['identifier'].strip()
             password = form.cleaned_data['password']
 
-            # کاربر می‌تونه با یوزرنیم یا ایمیل لاگین کنه
+            
             username_to_check = identifier
             if '@' in identifier:
-                # اگه شبیه ایمیله، یوزرنیم متناظرش رو از دیتابیس پیدا می‌کنیم
+            
                 try:
                     matched_user = User.objects.get(email__iexact=identifier)
                     username_to_check = matched_user.username
                 except User.DoesNotExist:
-                    username_to_check = identifier  # عمداً معتبر نیست، authenticate شکست می‌خوره
+                    username_to_check = identifier 
 
             user = authenticate(request, username=username_to_check, password=password)
 
@@ -382,7 +381,7 @@ def login_view(request):
     else:
         form = LoginForm()
 
-    return render(request, 'accounts/login.html', {'form': form, 'next': next_url})
+    return render(request, 'login.html', {'form': form, 'next': next_url})
 
 
 def logout_view(request):
@@ -393,4 +392,4 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'accounts/dashboard.html')
+    return render(request, 'dashboard.html')

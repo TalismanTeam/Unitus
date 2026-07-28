@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas - Register</title>
+    
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <main class="auth-container">
+            
+            
+            {% if messages %}
+                <div class="messages-container" style="margin-bottom: 20px; color: red;">
+                    {% for message in messages %}
+                        <p class="{{ message.tags }}">- {{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- (Register) -->
+            <section class="register-form">
+                <h2>Register</h2>
+                <form method="POST" action="{% url 'accounts:register' %}">
+                    {% csrf_token %}
+                    
+                    {{ form.as_p }}
+                    
+                    <button type="submit">Register</button>
+                </form>
+            </section>
+
+            <div class="auth-switch" style="margin-top: 20px; text-align: center;">
+                <p>Already have an account? <a href="{% url 'accounts:login' %}">Login</a></p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
