@@ -255,6 +255,12 @@ def active_projects_count_view(request, id):
 
 # ---------------------------------------------------------------------------
 # GET /users/me/dashboard/projects?tab=in_progress|suspended|completed|managed|all
+#
+# UNCHANGED: this is the JSON API dashboard.js calls to populate the
+# "My Projects" tabs. Only the page that embeds dashboard.js moved
+# (dashboard.html -> reached via accounts:my-projects instead of a
+# top-level nav link); the endpoint itself, its URL, and its response
+# shape are untouched.
 # ---------------------------------------------------------------------------
 
 @login_required
@@ -334,7 +340,7 @@ def report_user_view(request, id):
 
 def register_view(request):
     if request.user.is_authenticated:
-        return redirect('accounts:dashboard')
+        return redirect('accounts:profile-page')
 
     if request.method == 'POST':
         form = RegisterForm(request.POST)
@@ -354,7 +360,7 @@ def register_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('accounts:dashboard')
+        return redirect('accounts:profile-page')
 
     next_url = request.GET.get('next') or request.POST.get('next')
 
@@ -384,7 +390,10 @@ def login_view(request):
                 messages.error(request, "This account has been temporarily suspended.")
             else:
                 login(request, user)
-                return redirect(next_url or 'accounts:dashboard')
+                # After login, go to the user's own public profile page
+                # instead of the old dashboard. `next` (e.g. a login-wall
+                # redirect from some other page) still takes priority.
+                return redirect(next_url or 'accounts:profile-page')
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -402,7 +411,13 @@ def logout_view(request):
 
 
 @login_required
-def dashboard_view(request):
+def my_projects_view(request):
+    """
+    Renders the same tabbed project list dashboard.html always had
+    (In Progress / Suspended / Completed / Managed / All), populated by
+    dashboard.js hitting dashboard_projects_view above. Only reachable
+    now via Projects hub -> "My Projects" (no longer a top-level nav link).
+    """
     return render(request, 'dashboard.html')
 
 

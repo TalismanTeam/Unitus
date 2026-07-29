@@ -4,15 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unitas - Dashboard</title>
+    <title>Unitas - My Projects</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
     <div class="container">
         <nav>
             <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'accounts:dashboard' %}" class="active">Dashboard</a>
-            <a href="projects.html">Projects</a>
+            <a href="{% url 'projects:home' %}" class="active">Projects</a>
             <a href="project_advertisements.html">Advertisements</a>
             <a href="search.html">Search</a>
             <a href="matching.html">Matchmaking</a>
@@ -24,7 +23,7 @@
         </nav>
 
         <main>
-            <h1>User Dashboard</h1>
+            <h1>My Projects</h1>
 
             <div class="tabs">
                 <button class="tab-btn active" data-tab="in_progress">In Progress</button>

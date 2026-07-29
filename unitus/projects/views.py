@@ -21,7 +21,25 @@ from .permissions import can_view_workspace, is_active_member, is_project_pm
 from .services import sync_job_ad_status_for_role
 
 
-def home(request):
+@login_required
+def projects_hub(request):
+    """
+    New landing page for the "Projects" nav link: just 3 buttons that
+    route to the pages that already exist elsewhere.
+      - My Projects        -> accounts:my-projects (the old dashboard.html)
+      - Create a Project   -> projects:project_create
+      - Recommended Projects -> projects:browse (the old views.home)
+    """
+    return render(request, 'projects/hub.html')
+
+
+def browse(request):
+    """
+    Was `home` at /projects/ (name='home'). Unchanged logic — job-ad /
+    user search plus skill-matched suggestions — just moved to
+    /projects/browse/ (name='browse') and used as the destination for the
+    hub's "Recommended Projects" button.
+    """
 
     query = request.GET.get('q', '').strip()
     search_type = request.GET.get('type', 'jobads')
@@ -272,7 +290,7 @@ def project_delete(request, pk):
     if request.method == 'POST':
         project.delete()
         messages.success(request, 'Project deleted successfully.')
-        return redirect('accounts:dashboard')
+        return redirect('accounts:my-projects')
 
     return render(request, 'projects/project_delete_confirm.html', {'project': project})
 
@@ -356,7 +374,7 @@ def project_resign(request, pk):
                 sync_job_ad_status_for_role(member.project_role)
 
             messages.success(request, 'You have resigned from the project.')
-            return redirect('accounts:dashboard')
+            return redirect('accounts:my-projects')
     else:
         form = ProjectResignForm()
 

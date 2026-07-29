@@ -19,7 +19,14 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),
+
+    # Was 'dashboard/' -> now lives conceptually under "Projects > My Projects".
+    # URL path/name changed so it's no longer reachable as a standalone
+    # top-level nav item; it's now only linked to from the Projects hub page.
+    # NOTE: dashboard_projects_view (the JSON API dashboard.js calls) is
+    # untouched — its URL, name, and response shape are all unchanged.
+    path('my-projects/', views.my_projects_view, name='my-projects'),
+
     path('profile/', views.profile_page_view, name='profile-page'),
     path('profile/edit/', views.profile_edit_view, name='profile-edit'),
     path('profile/<int:id>/', views.profile_page_view, name='profile-page-detail'),

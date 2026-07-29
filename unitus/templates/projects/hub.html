@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <title>Unitas - Projects</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="project_advertisements.html">Advertisements</a>
+      <a href="search.html">Search</a>
+      <a href="matching.html">Matchmaking</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="chat.html">Chat</a>
+      <a href="notification.html">Notifications</a>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <main>
+      <h1>Projects</h1>
+      <p class="hint">Choose what you want to do.</p>
+
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <a href="{% url 'accounts:my-projects' %}"
+           style="flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; text-decoration: none; text-align: center; color: var(--text);">
+          <h3 style="margin: 0 0 8px;">My Projects</h3>
+          <p class="hint" style="margin: 0;">Projects you're managing or working on.</p>
+        </a>
+
+        <a href="{% url 'projects:project_create' %}"
+           style="flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; text-decoration: none; text-align: center; color: var(--text);">
+          <h3 style="margin: 0 0 8px;">Create a Project</h3>
+          <p class="hint" style="margin: 0;">Start a new project and recruit a team.</p>
+        </a>
+
+        <a href="{% url 'projects:browse' %}"
+           style="flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; text-decoration: none; text-align: center; color: var(--text);">
+          <h3 style="margin: 0 0 8px;">Recommended Projects</h3>
+          <p class="hint" style="margin: 0;">Open roles matched to your skills.</p>
+        </a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

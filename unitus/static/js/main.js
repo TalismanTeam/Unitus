@@ -47,11 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewPage) {
       console.log("[Unitas] Profile view module initialized.");
 
-      // PROFILE_ID is set inline in userprofile.html: null on /auth/profile/
-      // (your own profile), or a user id on /auth/profile/<id>/ (someone
+      // PROFILE_ID is set inline in userprofile.html: null on /profile/
+      // (your own profile), or a user id on /profile/<id>/ (someone
       // else's — read-only + Report button instead of Edit).
       const isOwnProfile = typeof PROFILE_ID !== 'undefined' && PROFILE_ID === null;
-      const profileUrl = isOwnProfile ? '/auth/users/me' : `/auth/users/${PROFILE_ID}`;
+      const profileUrl = isOwnProfile ? '/users/me' : `/users/${PROFILE_ID}`;
 
       function populateHeader(data) {
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username;
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
           container.querySelectorAll('.removeSkillBtn').forEach((btn) => {
             btn.addEventListener('click', async () => {
               try {
-                await apiFetch(`/auth/users/me/skills/${btn.dataset.skillId}`, { method: 'DELETE' });
+                await apiFetch(`/users/me/skills/${btn.dataset.skillId}`, { method: 'DELETE' });
                 loadProfile();
               } catch (e) {
                 alert(e.message);
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Radio values are INACTIVITY / INSULTING / FAKE_PROJECT / OTHER,
         // matching moderation.models.Report.Reason exactly.
         try {
-          await apiFetch(`/auth/users/${PROFILE_ID}/report`, {
+          await apiFetch(`/users/${PROFILE_ID}/report`, {
             method: 'POST',
             body: JSON.stringify({ reason, description }),
           });
@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
             skillId = created.id;
           }
 
-          await apiFetch('/auth/users/me/skills', {
+          await apiFetch('/users/me/skills', {
             method: 'POST',
             body: JSON.stringify({ skill: skillId, mastery_level: masteryLevel }),
           });
@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async function loadAvatarOptions() {
         const container = document.getElementById('avatarOptions');
         try {
-          const avatars = await apiFetch('/auth/users/me/avatar-options');
+          const avatars = await apiFetch('/users/me/avatar-options');
           container.innerHTML = '';
           avatars.forEach((a) => {
             const opt = document.createElement('span');
@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       async function loadOwnProfile() {
         try {
-          const data = await apiFetch('/auth/users/me');
+          const data = await apiFetch('/users/me');
           prefillEditForm(data);
         } catch (e) {
           console.error('Could not load profile for editing', e);
@@ -322,16 +322,16 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-          await apiFetch('/auth/users/me', { method: 'PATCH', body: JSON.stringify(body) });
+          await apiFetch('/users/me', { method: 'PATCH', body: JSON.stringify(body) });
 
           const openToWork = document.getElementById('openToWorkCheckbox').checked;
-          await apiFetch('/auth/users/me/open-to-work', {
+          await apiFetch('/users/me/open-to-work', {
             method: 'PATCH',
             body: JSON.stringify({ is_open_to_work: openToWork }),
           });
 
           if (selectedAvatarId !== currentAvatarId) {
-            await apiFetch('/auth/users/me/avatar', {
+            await apiFetch('/users/me/avatar', {
               method: 'PATCH',
               body: JSON.stringify({ avatar_icon: selectedAvatarId }),
             });
@@ -344,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // profile page. PROFILE_REDIRECT_URL is set inline in profile_edit.html.
           setTimeout(() => {
             window.location.href =
-              typeof PROFILE_REDIRECT_URL !== 'undefined' ? PROFILE_REDIRECT_URL : '/auth/profile/';
+              typeof PROFILE_REDIRECT_URL !== 'undefined' ? PROFILE_REDIRECT_URL : '/profile/';
           }, 600);
         } catch (e) {
           statusEl.textContent = e.message;

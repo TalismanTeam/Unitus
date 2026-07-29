@@ -20,7 +20,15 @@ from django.shortcuts import redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('accounts.urls')),
+
+    # Was 'auth/' -> now mounted directly at the root. Every accounts.urls
+    # path (users/me, register/, login/, logout/, my-projects/, profile/...)
+    # is now reachable with no prefix at all, e.g. /login/ instead of
+    # /auth/login/. NOTE: this app is also mounted at '' below, right
+    # before reviews.urls — order matters if the two ever define an
+    # overlapping path, so accounts is listed first.
+    path('', include('accounts.urls')),
+
     path('projects/', include('projects.urls')),
     path('search/', include('search.urls')),
     path('recommendations/', include('recommendation.urls')),

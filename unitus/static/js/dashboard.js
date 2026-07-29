@@ -2,10 +2,11 @@
 // Connects the "In Progress / Suspended / Completed / Managed / All" tabs
 // on dashboard.html to:
 //
-//   GET /auth/users/me/dashboard/projects?tab=<in_progress|suspended|completed|managed|all>
+//   GET /users/me/dashboard/projects?tab=<in_progress|suspended|completed|managed|all>
 //
-// (accounts.views.dashboard_projects_view, mounted at /auth/ in the root
-// urls.py). Session-auth only, GET-only, so no CSRF header is needed here.
+// (accounts.views.dashboard_projects_view, mounted at '' — no prefix — in
+// the root urls.py). Session-auth only, GET-only, so no CSRF header is
+// needed here.
 //
 // Response shape (accounts.serialization.serialize_project_summary), one
 // object per project:
@@ -22,7 +23,7 @@
 // That page is server-rendered Django (no JSON here) and itself enforces
 // that only the PM sees edit/delete/status-change/transfer actions.
 
-const DASHBOARD_PROJECTS_URL = "/auth/users/me/dashboard/projects";
+const DASHBOARD_PROJECTS_URL = "/users/me/dashboard/projects";
 const projectWorkspaceUrl = (id) => `/projects/${id}/workspace/`;
 
 const TAB_HEADINGS = {
