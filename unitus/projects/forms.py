@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import modelformset_factory
+from django.forms import BaseModelFormSet, modelformset_factory
 
 from .models import Project, ProjectRole, ProjectRoleSkill
 
@@ -32,11 +32,44 @@ class ProjectRoleForm(forms.ModelForm):
         return capacity
 
 
+class BaseRoleSkillFormSet(BaseModelFormSet):
+    """
+    Rejects duplicate skill selections across the rows of one submission.
+    Without this, two rows picking the same skill both pass per-form
+    validation and only fail when saved, as a raw IntegrityError from the
+    (role, skill) unique constraint on ProjectRoleSkill.
+    """
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        seen_skills = set()
+        for form in self.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+            cleaned_data = form.cleaned_data
+            if not cleaned_data or cleaned_data.get('DELETE'):
+                continue
+
+            skill = cleaned_data.get('skill')
+            if skill is None:
+                continue
+
+            if skill in seen_skills:
+                raise forms.ValidationError(
+                    f'"{skill.name}" is selected more than once — each skill can only be added once per role.'
+                )
+            seen_skills.add(skill)
+
+
 RoleSkillFormSet = modelformset_factory(
     ProjectRoleSkill,
     fields=['skill', 'min_required_level'],
     extra=3,
     can_delete=True,
+    formset=BaseRoleSkillFormSet,
 )
 
 

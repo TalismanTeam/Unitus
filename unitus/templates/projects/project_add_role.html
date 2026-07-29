@@ -13,8 +13,8 @@
   <div class="container">
 
     <nav>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
-      <a href="{% url 'projects:home' %}">Projects</a>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
@@ -73,42 +73,58 @@
       <hr>
 
       <h3>Required Skills</h3>
-      <p class="hint">Optional — add the skills and minimum mastery level a candidate needs for this role. Leave a row's skill blank to skip it, or check "Remove" to delete it.</p>
+      <p class="hint">Optional — add the skills and minimum mastery level a candidate needs for this role. Leave a row's skill blank to skip it, or remove it entirely.</p>
 
       {{ formset.management_form }}
 
-      {% for skill_form in formset %}
-        <div class="role-card">
-          <div class="role-card-header">
-            <strong>Skill {{ forloop.counter }}</strong>
-            {% if skill_form.DELETE %}
-              <label class="inline-check" for="{{ skill_form.DELETE.id_for_label }}">
-                {{ skill_form.DELETE }} Remove
-              </label>
+      <div id="skillFormsetContainer">
+        {% for skill_form in formset %}
+          <div class="role-card skill-form-row">
+            <div class="role-card-header">
+              <strong>Skill {{ forloop.counter }}</strong>
+              <button type="button" class="remove-btn" style="padding:4px 10px; font-size:12px;" onclick="removeSkillRow(this)">Remove</button>
+            </div>
+
+            {% for hidden in skill_form.hidden_fields %}{{ hidden }}{% endfor %}
+
+            <div class="skill-row">
+              {{ skill_form.skill }}
+              {{ skill_form.min_required_level }}
+            </div>
+
+            {% if skill_form.skill.errors %}
+              <p class="hint" style="color:#ef4444;">{{ skill_form.skill.errors|join:" " }}</p>
+            {% endif %}
+            {% if skill_form.min_required_level.errors %}
+              <p class="hint" style="color:#ef4444;">{{ skill_form.min_required_level.errors|join:" " }}</p>
             {% endif %}
           </div>
+        {% endfor %}
+      </div>
 
-          {% for hidden in skill_form.hidden_fields %}{{ hidden }}{% endfor %}
-
-          <div class="skill-row">
-            {{ skill_form.skill }}
-            {{ skill_form.min_required_level }}
-          </div>
-
-          {% if skill_form.skill.errors %}
-            <p class="hint" style="color:#ef4444;">{{ skill_form.skill.errors|join:" " }}</p>
-          {% endif %}
-          {% if skill_form.min_required_level.errors %}
-            <p class="hint" style="color:#ef4444;">{{ skill_form.min_required_level.errors|join:" " }}</p>
-          {% endif %}
-        </div>
-      {% endfor %}
+      <button type="button" class="secondary-btn" onclick="addSkillRow()">+ Add another skill</button>
 
       <div class="modal-actions">
         <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_workspace' project.pk %}'">Cancel</button>
         <button type="submit">Confirm &amp; Add Role</button>
       </div>
     </form>
+
+    <!-- Blank row template used by addSkillRow() below. Rendered via Django's
+         formset.empty_form so field names/widgets always match the formset
+         (skill choices, level choices, etc.) without hardcoding them in JS. -->
+    <template id="skillRowTemplate">
+      <div class="role-card skill-form-row">
+        <div class="role-card-header">
+          <strong>Skill</strong>
+          <button type="button" class="remove-btn" style="padding:4px 10px; font-size:12px;" onclick="removeSkillRow(this)">Remove</button>
+        </div>
+        <div class="skill-row">
+          {{ formset.empty_form.skill }}
+          {{ formset.empty_form.min_required_level }}
+        </div>
+      </div>
+    </template>
 
     {% if existing_roles %}
       <h3 style="margin-top: 32px;">Roles already added to this project</h3>
@@ -126,6 +142,34 @@
     {% endif %}
 
   </div>
+
+  <script>
+    function renumberSkillRows() {
+      document.querySelectorAll('#skillFormsetContainer .skill-form-row').forEach((row, i) => {
+        row.querySelector('.role-card-header strong').textContent = 'Skill ' + (i + 1);
+      });
+    }
+
+    function addSkillRow() {
+      const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+      const index = parseInt(totalFormsInput.value, 10);
+
+      const templateHtml = document.getElementById('skillRowTemplate').innerHTML.replace(/__prefix__/g, index);
+
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = templateHtml.trim();
+      const newRow = wrapper.firstElementChild;
+
+      document.getElementById('skillFormsetContainer').appendChild(newRow);
+      totalFormsInput.value = index + 1;
+      renumberSkillRows();
+    }
+
+    function removeSkillRow(button) {
+      button.closest('.skill-form-row').remove();
+      renumberSkillRows();
+    }
+  </script>
 
   <script src="{% static 'js/main.js' %}"></script>
 </body>
