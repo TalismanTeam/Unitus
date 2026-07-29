@@ -6,35 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unitas - Login</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
 <body>
-    <div class="container">
-        <main class="auth-container">
-            
-            {% if messages %}
-                <div class="messages-container" style="margin-bottom: 20px; color: red;">
-                    {% for message in messages %}
-                        <p class="{{ message.tags }}">- {{ message }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            <!-- (Login) -->
-            <section class="login-form">
-                <h2>Login</h2>
-                <form method="POST" action="{% url 'accounts:login' %}">
-                    {% csrf_token %}
-                    <input type="text" name="identifier" placeholder="Username or Email" required>
-                    <input type="password" name="password" placeholder="Password" required>
-                    <button type="submit">Login</button>
-                </form>
-            </section>
-
-            
-            <div class="auth-switch" style="margin-top: 20px; text-align: center;">
-                <p>Don't have an account? <a href="{% url 'accounts:register' %}">Register</a></p>
+    <div class="auth-wrapper">
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <p class="{{ message.tags }}">{{ message }}</p>
+                {% endfor %}
             </div>
-        </main>
+        {% endif %}
+
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+            <form method="POST" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                <div style="margin-bottom: 16px;">
+                    <label for="id_identifier">Username or Email</label>
+                    <input type="text" id="id_identifier" name="identifier" placeholder="Enter your username or email" required>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label for="id_password">Password</label>
+                    <input type="password" id="id_password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div class="auth-switch">
+            <p>Don't have an account? <a href="{% url 'accounts:register' %}">Register</a></p>
+        </div>
     </div>
 </body>
 </html>

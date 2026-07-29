@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <title>Unitus - Chat with {{ other_user.username }}</title>
+</head>
+<body>
+<div class="container">
+    <div class="layout-grid">
+        {% include 'chat/_sidebar.html' %}
+
+        <main class="chat-window">
+            <div class="chat-header"><h3>{{ other_user.username }}</h3></div>
+
+            <div class="chat-history" id="chatHistory"
+                 data-mode="new-direct"
+                 data-ws-path="{{ websocket_path }}"
+                 data-current-user-id="{{ request.user.id }}">
+                <p class="empty-hint">This is the beginning of your conversation with {{ other_user.username }}.</p>
+            </div>
+
+            <form class="chat-input-area" id="chatInputArea">
+                <textarea id="chatInput" placeholder="Type your first message..." autocomplete="off" rows="1"></textarea>
+                <button type="submit" id="chatSendBtn">Send</button>
+            </form>
+        </main>
+    </div>
+</div>
+<script src="{% static 'js/chat.js' %}"></script>
+</body>
+</html>

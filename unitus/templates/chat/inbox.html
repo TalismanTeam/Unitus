@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <title>Unitus - Chats</title>
+</head>
+<body>
+<div class="container">
+    <div class="layout-grid">
+        {% include 'chat/_sidebar.html' %}
+        <main class="chat-window chat-window-empty">
+            <div class="empty-state">
+                <p>Select a conversation from the list to start messaging.</p>
+            </div>
+        </main>
+    </div>
+</div>
+<script src="{% static 'js/chat.js' %}"></script>
+</body>
+</html>
