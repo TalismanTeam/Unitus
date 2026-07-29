@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <title>Unitas - User Profile</title>
   <style>
     body {
@@ -33,13 +34,24 @@
       justify-content: center; 
       z-index: 1000;
     }
+
+    .avatar-option {
+      cursor: pointer;
+      font-size: 28px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+    .avatar-option.selected {
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body style="direction: ltr !important; text-align: left !important;">
   <div class="container" style="direction: ltr !important;">
     <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
       <a href="projects.html">Projects</a>
       <a href="project_advertisements.html">Advertisements</a>
       <a href="search.html">Search</a>
@@ -47,7 +59,7 @@
       <a href="ticketManagement.html">Tickets</a>
       <a href="chat.html">Chat</a>
       <a href="notification.html">Notifications</a>
-      <a href="userprofile.html" class="active">Profile</a>
+      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
       <a href="settings.html">Settings</a>
     </nav>
 
@@ -58,7 +70,7 @@
             👤
           </div>
           <div>
-            <h2 style="margin: 0; color: var(--text);" id="viewName">Unnamed User</h2>
+            <h2 style="margin: 0; color: var(--text);" id="viewName">Loading...</h2>
             <p style="margin: 5px 0; color: var(--muted);" id="viewBio">User biography goes here...</p>
             <p style="margin: 0; font-size: 13px; color: var(--muted);" id="viewLocation">📍 Location not set</p>
           </div>
@@ -73,16 +85,16 @@
       </div>
 
       <div style="margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
-        <button onclick="alert('Redirecting to chat...')">Start Chat</button>
-        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);" onclick="toggleSection('editProfileSection')">Edit Profile</button>
-        <button style="background: transparent; color: #ef4444; border: 1px solid #ef4444;" onclick="openReportModal()">Report User</button>
+        <button id="startChatBtn" onclick="alert('Redirecting to chat...')">Start Chat</button>
+        <a id="editProfileBtn" href="{% url 'accounts:profile-edit' %}" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">Edit Profile</a>
+        <button id="reportUserBtn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444;" onclick="openReportModal()">Report User</button>
       </div>
     </div>
 
     <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
       <h3 style="margin-top: 0; color: var(--text);">Skills Matrix</h3>
       <div id="skillsList">
-        <p style="color: var(--muted); font-size: 14px; margin: 0;">No skills added yet.</p>
+        <p style="color: var(--muted); font-size: 14px; margin: 0;">Loading skills...</p>
       </div>
     </div>
 
@@ -91,12 +103,15 @@
       <div id="portfolioList">
         <p style="color: var(--muted); font-size: 14px; margin: 0;">No portfolio items added yet.</p>
       </div>
+      <p style="color: var(--muted); font-size: 12px; margin: 8px 0 0;">
+        Portfolio isn't backed by an API yet — nothing here is connected.
+      </p>
     </div>
 
     <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
       <h3 style="margin-top: 0; color: var(--text);">Reviews & Ratings</h3>
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-        <h2 style="margin: 0; color: var(--accent);">- / 5</h2>
+        <h2 style="margin: 0; color: var(--accent);" id="avgRatingText">- / 5</h2>
         <span style="color: var(--muted); font-size: 14px;">Average rating from past collaborations</span>
       </div>
       <div id="reviewsList">
@@ -104,92 +119,27 @@
       </div>
     </div>
 
-    <div id="editProfileSection" style="display: none; margin-top: 25px;">
-      <h2 style="color: var(--text);">Edit Profile</h2>
-      <form onsubmit="event.preventDefault(); alert('Information saved successfully.');">
-        
-        <label style="font-weight: bold; color: var(--text);">Change Profile Picture (Default Avatar):</label>
-        <div style="display: flex; gap: 15px; margin: 10px 0 20px 0; color: var(--text);">
-          <label style="cursor: pointer;"><input type="radio" name="avatar" value="👨‍💻" checked> 👨‍💻</label>
-          <label style="cursor: pointer;"><input type="radio" name="avatar" value="👩‍💻"> 👩‍💻</label>
-          <label style="cursor: pointer;"><input type="radio" name="avatar" value="🚀"> 🚀</label>
-          <label style="cursor: pointer;"><input type="radio" name="avatar" value="🎓"> 🎓</label>
-        </div>
-
-        <label style="font-weight: bold; color: var(--text);">Full Name:</label>
-        <input type="text" placeholder="Enter your full name...">
-
-        <label style="font-weight: bold; color: var(--text);">Biography (Bio):</label>
-        <input type="text" placeholder="Write a short description about your expertise or interests...">
-
-        <label style="font-weight: bold; color: var(--text);">Location:</label>
-        <input type="text" placeholder="Example: New York, USA">
-
-        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="font-weight: bold; color: var(--text);">Work Preferences:</label>
-          <div style="margin: 10px 0;">
-            <label style="color: var(--text); cursor: pointer;"><input type="checkbox" checked style="width: auto;"> Available for Work</label>
-          </div>
-          <div style="display: flex; gap: 15px; font-size: 14px; color: var(--text);">
-            <label style="cursor: pointer;"><input type="radio" name="workType" value="Remote" checked style="width: auto;"> Remote</label>
-            <label style="cursor: pointer;"><input type="radio" name="workType" value="Hybrid" style="width: auto;"> Hybrid</label>
-            <label style="cursor: pointer;"><input type="radio" name="workType" value="On-site" style="width: auto;"> On-site</label>
-          </div>
-        </div>
-
-        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="font-weight: bold; color: var(--text);">Add New Skill:</label>
-          <input type="text" placeholder="Skill Name (e.g., React.js)">
-          <select style="width: 100%; padding: 12px; margin: 10px 0 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
-            <option value="" disabled selected style="background: var(--surface);">Select proficiency level</option>
-            <option style="background: var(--surface);">Beginner</option>
-            <option style="background: var(--surface);">Intermediate</option>
-            <option style="background: var(--surface);">Advanced</option>
-            <option style="background: var(--surface);">Expert</option>
-            <option style="background: var(--surface);">Master</option>
-          </select>
-        </div>
-
-        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="font-weight: bold; color: var(--text);">Add Portfolio Item:</label>
-          <input type="text" placeholder="Project Title">
-          <input type="text" placeholder="Project Link (Optional)">
-          <input type="text" placeholder="Description and your role in the project">
-        </div>
-
-        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="font-weight: bold; color: var(--text);">Privacy Settings:</label>
-          <div style="margin: 10px 0; font-size: 14px; color: var(--text);">
-            <label style="cursor: pointer;"><input type="checkbox" checked style="width: auto;"> Make portfolio public</label>
-          </div>
-          <div style="margin: 10px 0; font-size: 14px; color: var(--text);">
-            <label style="cursor: pointer;"><input type="checkbox" checked style="width: auto;"> Show reviews and ratings on public profile</label>
-          </div>
-        </div>
-
-        <button type="submit" style="margin-top: 15px; width: 100%;">Save Changes</button>
-      </form>
-    </div>
   </div>
 
   <div id="reportModal" class="modal-overlay">
     <div style="background: var(--surface); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 400px; width: 90%; text-align: left;">
       <h3 style="margin-top: 0; color: #ef4444;">Report User</h3>
       <p style="font-size: 13px; color: var(--muted);">Select the reason for reporting:</p>
-      
-      <form style="background: transparent; padding: 0; border: none; box-shadow: none;" onsubmit="event.preventDefault(); alert('Report submitted successfully.'); closeReportModal();">
+
+      <form id="reportForm" style="background: transparent; padding: 0; border: none; box-shadow: none;">
         <label style="display: block; margin: 10px 0; cursor: pointer; color: var(--text);">
-          <input type="radio" name="reportReason" value="Inactivity" checked style="width: auto;"> Inactivity
+          <input type="radio" name="reportReason" value="INACTIVITY" checked style="width: auto;"> Inactivity
         </label>
         <label style="display: block; margin: 10px 0; cursor: pointer; color: var(--text);">
-          <input type="radio" name="reportReason" value="Insulting" style="width: auto;"> Insulting or Inappropriate Behavior
+          <input type="radio" name="reportReason" value="INSULTING" style="width: auto;"> Insulting or Inappropriate Behavior
         </label>
         <label style="display: block; margin: 10px 0; cursor: pointer; color: var(--text);">
-          <input type="radio" name="reportReason" value="Fake Project" style="width: auto;"> Fake Project
+          <input type="radio" name="reportReason" value="FAKE_PROJECT" style="width: auto;"> Fake Project
         </label>
         <label style="display: block; margin: 10px 0; cursor: pointer; color: var(--text);">
-          <input type="radio" name="reportReason" value="Other" style="width: auto;"> Other
+          <input type="radio" name="reportReason" value="OTHER" style="width: auto;"> Other
         </label>
+        <textarea id="reportDescription" placeholder="Optional details..." style="width: 100%; margin-top: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 10px;"></textarea>
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">
           <button type="submit" style="background: #ef4444; color: white; flex: 1;">Submit Report</button>
@@ -200,10 +150,10 @@
   </div>
 
   <script>
-    function toggleSection(sectionId) {
-      const el = document.getElementById(sectionId);
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
-    }
+    // profile_id is passed by accounts.views.profile_page_view:
+    //   /auth/profile/       -> profile_id is None  -> viewing your own profile
+    //   /auth/profile/<id>/  -> profile_id is the id -> viewing someone else's
+    const PROFILE_ID = {% if profile_id %}{{ profile_id }}{% else %}null{% endif %};
 
     function openReportModal() {
       document.getElementById('reportModal').style.display = 'flex';
@@ -213,6 +163,6 @@
       document.getElementById('reportModal').style.display = 'none';
     }
   </script>
-  <script src="main.js"></script>
+  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

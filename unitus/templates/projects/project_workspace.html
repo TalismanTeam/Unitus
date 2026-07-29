@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Unitas - {{ project.title }}</title>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="projects.html" class="active">Projects</a>
+      <a href="project_advertisements.html">Advertisements</a>
+      <a href="search.html">Search</a>
+      <a href="matching.html">Matchmaking</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="chat.html">Chat</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <!-- Full project detail — only reachable by the PM & active members;
+         enforced server-side by can_view_workspace() in project_workspace view -->
+    <div class="page-header">
+      <h2 id="projectTitle">{{ project.title }}</h2>
+      <span class="hint" id="projectStatus">{{ project.get_state_display }}</span>
+    </div>
+
+    <div class="list-item">
+      <p><strong>Full description:</strong></p>
+      <p id="projectFullDesc" class="hint">{{ project.full_description }}</p>
+
+      <p><strong>Estimated duration:</strong> <span id="projectDuration">{{ project.duration_days }} days</span></p>
+      <p><strong>Owner:</strong> <span id="projectOwner">{{ project.pm.username }}</span></p>
+      <p id="ownerRoleLine">
+        <strong>Owner's role:</strong>
+        <span id="projectOwnerRole">
+          {% if owner_role_title %}{{ owner_role_title }}{% else %}Owner has no technical role (management only).{% endif %}
+        </span>
+      </p>
+    </div>
+
+    <h3>Roles &amp; Members</h3>
+    <div id="rolesList">
+      {% for role in roles %}
+        <div class="list-item">
+          <p><strong>{{ role.role_title }}</strong> ({{ role.filled_count }}/{{ role.capacity }} filled)</p>
+          <p class="hint">{{ role.role_description }}</p>
+          <ul>
+            {% for role_skill in role.projectroleskill_set.all %}
+              <li>{{ role_skill.skill.name }} — {{ role_skill.get_min_required_level_display }}</li>
+            {% endfor %}
+          </ul>
+          {% if role.filled_count >= role.capacity %}
+            <p class="hint">This role is fully staffed.</p>
+          {% elif role.jobad and role.jobad.status == 'OPEN' %}
+            <p class="hint">No member assigned yet — an advertisement is currently active for this role.</p>
+          {% endif %}
+
+          {% if is_pm %}
+            <div class="project-actions">
+              <a href="{% url 'projects:project_edit_role' project.pk role.pk %}">Edit Role</a>
+              <a href="{% url 'projects:project_delete_role' project.pk role.pk %}">Delete Role</a>
+            </div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="hint">No roles have been defined for this project yet.</p>
+      {% endfor %}
+    </div>
+
+    <h3>Active Members</h3>
+    <ul>
+      {% for member in members %}
+        <li>
+          {{ member.user.username }}
+          {% if member.user_id == project.pm_id %}
+            (Project Manager{% if member.project_role %} &amp; {{ member.project_role.role_title }}{% endif %})
+          {% elif member.project_role %}
+            — {{ member.project_role.role_title }}
+          {% else %}
+            — role not assigned
+          {% endif %}
+
+          {% if is_pm and member.user_id != project.pm_id %}
+            <a href="{% url 'projects:project_remove_member' project.pk member.pk %}" class="secondary-btn">Remove</a>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="hint">No active members yet.</li>
+      {% endfor %}
+    </ul>
+
+    <!-- Owner-only actions -->
+    {% if is_pm %}
+      <div class="page-header" style="margin-top: 20px;">
+        <div class="project-actions">
+          <button type="button" onclick="window.location.href='{% url 'projects:project_edit' project.pk %}'">Edit Project</button>
+          <button type="button" onclick="window.location.href='{% url 'projects:project_add_role' project.pk %}'">Add Role</button>
+          <button type="button" onclick="window.location.href='{% url 'projects:project_state_change' project.pk %}'">Change Status</button>
+          <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_transfer_ownership' project.pk %}'">Transfer Ownership</button>
+          <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_delete' project.pk %}'">Delete Project</button>
+        </div>
+      </div>
+    {% elif is_member %}
+      <div class="page-header" style="margin-top: 20px;">
+        <div class="project-actions">
+          <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_resign' project.pk %}'">Resign from Project</button>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

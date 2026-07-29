@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from skills.models import UserSkill
@@ -17,7 +17,7 @@ from .forms import (
     TransferOwnershipForm,
 )
 from .models import JobAd, Project, ProjectMember, ProjectRole
-from .permissions import can_view_workspace, is_project_pm
+from .permissions import can_view_workspace, is_active_member, is_project_pm
 from .services import sync_job_ad_status_for_role
 
 
@@ -124,16 +124,40 @@ def project_workspace(request, pk):
     if not can_view_workspace(request.user, project):
         raise PermissionDenied("You don't have access to this project's workspace.")
 
-    roles = project.projectrole_set.prefetch_related('projectroleskill_set__skill').all()
+    # filled_count: active ProjectMember rows currently on that role, so the
+    # template can show "X/Y filled" without doing its own DB queries.
+    roles = project.projectrole_set.prefetch_related(
+        'projectroleskill_set__skill'
+    ).annotate(
+        filled_count=Count(
+            'projectmember',
+            filter=Q(projectmember__member_status=ProjectMember.MemberStatus.ACTIVE),
+        )
+    ).all()
+
     members = project.projectmember_set.filter(
         member_status=ProjectMember.MemberStatus.ACTIVE
     ).select_related('user', 'project_role')
+
+    # The PM is enrolled as a ProjectMember too (see signals.py), but may or
+    # may not have a technical ProjectRole assigned — surface that
+    # separately since the workspace page shows it next to "Owner".
+    owner_membership = next(
+        (m for m in members if m.user_id == project.pm_id), None
+    )
+    owner_role_title = (
+        owner_membership.project_role.role_title
+        if owner_membership and owner_membership.project_role
+        else None
+    )
 
     return render(request, 'projects/project_workspace.html', {
         'project': project,
         'roles': roles,
         'members': members,
         'is_pm': is_project_pm(request.user, project),
+        'is_member': is_active_member(request.user, project),
+        'owner_role_title': owner_role_title,
     })
 
 
@@ -158,28 +182,6 @@ def project_state_change(request, pk):
     else:
         form = ProjectStateChangeForm(instance=project)
     return render(request, 'projects/project_state_change.html', {'project': project, 'form': form})
-
-
-@login_required
-def dashboard(request):
-
-    user = request.user
-    managed = Project.objects.filter(pm=user)
-    joined_ids = ProjectMember.objects.filter(
-        user=user, member_status=ProjectMember.MemberStatus.ACTIVE
-    ).values_list('project_id', flat=True)
-    joined = Project.objects.filter(id__in=joined_ids)
-
-    all_related = (managed | joined).distinct()
-
-    context = {
-        'in_progress': all_related.filter(state=Project.State.IN_PROGRESS),
-        'suspended': all_related.filter(state=Project.State.SUSPENDED),
-        'completed': all_related.filter(state=Project.State.TERMINATED),
-        'managed': managed,
-        'all_related': all_related,
-    }
-    return render(request, 'projects/dashboard.html', context)
 
 
 @login_required
@@ -270,7 +272,7 @@ def project_delete(request, pk):
     if request.method == 'POST':
         project.delete()
         messages.success(request, 'Project deleted successfully.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
 
     return render(request, 'projects/project_delete_confirm.html', {'project': project})
 
@@ -354,7 +356,7 @@ def project_resign(request, pk):
                 sync_job_ad_status_for_role(member.project_role)
 
             messages.success(request, 'You have resigned from the project.')
-            return redirect('dashboard')
+            return redirect('accounts:dashboard')
     else:
         form = ProjectResignForm()
 

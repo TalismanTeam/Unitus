@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <title>Unitas - Edit Profile</title>
+  <style>
+    body {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+
+    nav {
+      direction: ltr !important;
+      display: flex;
+      justify-content: flex-start;
+      gap: 15px;
+    }
+
+    input, select, textarea {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+  </style>
+</head>
+<body style="direction: ltr !important; text-align: left !important;">
+  <div class="container" style="direction: ltr !important;">
+    <nav>
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+      <a href="projects.html">Projects</a>
+      <a href="project_advertisements.html">Advertisements</a>
+      <a href="search.html">Search</a>
+      <a href="matching.html">Matchmaking</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="chat.html">Chat</a>
+      <a href="notification.html">Notifications</a>
+      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 25px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <h2 style="margin: 0; color: var(--text);">Edit Profile</h2>
+        <a href="{% url 'accounts:profile-page' %}" style="color: var(--muted); font-size: 13px;">&larr; Back to profile</a>
+      </div>
+
+      <form id="editProfileForm">
+
+        <label style="font-weight: bold; color: var(--text);">Profile Picture:</label>
+        <div id="avatarOptions" style="display: flex; gap: 10px; margin: 10px 0 20px 0; flex-wrap: wrap;">
+          <span style="color: var(--muted); font-size: 13px;">Loading avatar options...</span>
+        </div>
+
+        <label style="font-weight: bold; color: var(--text);">First Name:</label>
+        <input type="text" id="firstNameInput" placeholder="Enter your first name...">
+
+        <label style="font-weight: bold; color: var(--text);">Last Name:</label>
+        <input type="text" id="lastNameInput" placeholder="Enter your last name...">
+
+        <label style="font-weight: bold; color: var(--text);">Biography (Bio):</label>
+        <input type="text" id="bioInput" placeholder="Write a short description about your expertise or interests...">
+
+        <label style="font-weight: bold; color: var(--text);">Location:</label>
+        <input type="text" id="locationInput" placeholder="Example: New York, USA">
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+          <label style="font-weight: bold; color: var(--text);">Work Preferences:</label>
+          <div style="margin: 10px 0;">
+            <label style="color: var(--text); cursor: pointer;"><input type="checkbox" id="openToWorkCheckbox" style="width: auto;"> Available for Work</label>
+          </div>
+          <div style="display: flex; gap: 15px; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="radio" name="workType" value="Remote" disabled style="width: auto;"> Remote</label>
+            <label style="cursor: pointer;"><input type="radio" name="workType" value="Hybrid" disabled style="width: auto;"> Hybrid</label>
+            <label style="cursor: pointer;"><input type="radio" name="workType" value="On-site" disabled style="width: auto;"> On-site</label>
+          </div>
+          <p style="color: var(--muted); font-size: 12px; margin: 6px 0 0;">
+            Remote/Hybrid/On-site preference isn't backed by an API yet (server returns 501) — disabled for now.
+          </p>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+          <label style="font-weight: bold; color: var(--text);">Add New Skill:</label>
+          <select id="skillCategorySelect" style="width: 100%; padding: 12px; margin: 10px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+            <option value="" disabled selected style="background: var(--surface);">Select category...</option>
+          </select>
+          <input type="text" id="skillNameInput" list="skillNameOptions" placeholder="Skill Name (e.g., React.js)" disabled>
+          <datalist id="skillNameOptions"></datalist>
+          <select id="skillLevelSelect" style="width: 100%; padding: 12px; margin: 10px 0 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+            <option value="" disabled selected style="background: var(--surface);">Select proficiency level</option>
+            <option value="BEGINNER" style="background: var(--surface);">Beginner</option>
+            <option value="INTERMEDIATE" style="background: var(--surface);">Intermediate</option>
+            <option value="ADVANCED" style="background: var(--surface);">Advanced</option>
+            <option value="EXPERT" style="background: var(--surface);">Expert</option>
+            <option value="MASTER" style="background: var(--surface);">Master</option>
+          </select>
+          <button type="button" id="addSkillBtn" style="margin-bottom: 10px;">Add Skill</button>
+          <p style="color: var(--muted); font-size: 12px; margin: 0;">
+            Pick a category first, then type — matching skills from the catalog show as suggestions.
+            Typing a name that isn't in the catalog suggests it as a new custom skill (pending approval)
+            and adds it to your profile right away.
+          </p>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+          <label style="font-weight: bold; color: var(--text);">Add Portfolio Item (not connected):</label>
+          <input type="text" placeholder="Project Title" disabled>
+          <input type="text" placeholder="Project Link (Optional)" disabled>
+          <input type="text" placeholder="Description and your role in the project" disabled>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+          <label style="font-weight: bold; color: var(--text);">Privacy Settings (not connected — no backend endpoint exists yet):</label>
+          <div style="margin: 10px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" checked disabled style="width: auto;"> Make portfolio public</label>
+          </div>
+          <div style="margin: 10px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" checked disabled style="width: auto;"> Show reviews and ratings on public profile</label>
+          </div>
+        </div>
+
+        <button type="submit" style="margin-top: 15px; width: 100%;">Save Changes</button>
+        <p id="editProfileStatus" style="font-size: 13px; margin-top: 8px;"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Where main.js sends the browser after a successful save. Kept as a
+    // template-rendered URL (like PROFILE_ID on userprofile.html) so it
+    // stays correct even if the profile-page route ever changes.
+    const PROFILE_REDIRECT_URL = "{% url 'accounts:profile-page' %}";
+  </script>
+  <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
