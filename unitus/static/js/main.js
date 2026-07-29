@@ -636,6 +636,55 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
+  // 7. PROJECT WORKSPACE MODULE (project_workspace.html)
+  // ==========================================
+  // These four modals are rendered conditionally (is_pm / is_member), so
+  // detect the module by whichever of them actually exists on the page.
+  const deleteProjectModal = document.getElementById('deleteProjectModal');
+  const removeMemberModal = document.getElementById('removeMemberModal');
+  const deleteRoleModal = document.getElementById('deleteRoleModal');
+  const resignModal = document.getElementById('resignModal');
+
+  if (deleteProjectModal || removeMemberModal || deleteRoleModal || resignModal) {
+    console.log("[Unitas] Project workspace module initialized.");
+
+    // Generic open/close — reused by every modal's Cancel button and by the
+    // "click outside to close" handler registered further down this file.
+    window.openModal = function (modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.add('visible');
+    };
+    window.closeModal = function (modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.remove('visible');
+    };
+
+    // Remove Member modal is one shared markup block reused for every row;
+    // point its <form> at the right URL and fill in the member's name
+    // before showing it.
+    window.openRemoveMemberModal = function (button) {
+      const form = document.getElementById('removeMemberForm');
+      const nameEl = document.getElementById('removeMemberName');
+      if (form) form.action = button.dataset.removeMemberUrl;
+      if (nameEl) nameEl.textContent = button.dataset.memberName;
+      openModal('removeMemberModal');
+    };
+
+    // Same idea for Delete Role.
+    window.openDeleteRoleModal = function (button) {
+      const form = document.getElementById('deleteRoleForm');
+      const nameEl = document.getElementById('deleteRoleName');
+      if (form) form.action = button.dataset.deleteRoleUrl;
+      if (nameEl) nameEl.textContent = button.dataset.roleTitle;
+      openModal('deleteRoleModal');
+    };
+
+    // Delete Project and Resign each have their own fixed-action <form>
+    // already in the markup, so their buttons just call openModal directly
+    // via inline onclick — nothing else to wire up here.
+  }
+
+  // ==========================================
   // GLOBAL MODAL HANDLERS (Optional Helper)
   // ==========================================
   // Closes any open modal when clicking outside the modal content

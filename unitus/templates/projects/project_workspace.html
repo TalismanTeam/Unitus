@@ -81,7 +81,10 @@
           {% if is_pm %}
             <div class="project-actions">
               <a href="{% url 'projects:project_edit_role' project.pk role.pk %}">Edit Role</a>
-              <a href="{% url 'projects:project_delete_role' project.pk role.pk %}">Delete Role</a>
+              <button type="button" class="remove-btn"
+                      data-delete-role-url="{% url 'projects:project_delete_role' project.pk role.pk %}"
+                      data-role-title="{{ role.role_title }}"
+                      onclick="openDeleteRoleModal(this)">Delete Role</button>
             </div>
           {% endif %}
         </div>
@@ -104,7 +107,10 @@
           {% endif %}
 
           {% if is_pm and member.user_id != project.pm_id %}
-            <a href="{% url 'projects:project_remove_member' project.pk member.pk %}" class="secondary-btn">Remove</a>
+            <button type="button" class="remove-btn"
+                    data-remove-member-url="{% url 'projects:project_remove_member' project.pk member.pk %}"
+                    data-member-name="{{ member.user.username }}"
+                    onclick="openRemoveMemberModal(this)">Remove</button>
           {% endif %}
         </li>
       {% empty %}
@@ -120,18 +126,99 @@
           <button type="button" onclick="window.location.href='{% url 'projects:project_add_role' project.pk %}'">Add Role</button>
           <button type="button" onclick="window.location.href='{% url 'projects:project_state_change' project.pk %}'">Change Status</button>
           <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_transfer_ownership' project.pk %}'">Transfer Ownership</button>
-          <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_delete' project.pk %}'">Delete Project</button>
+          <button type="button" class="remove-btn" onclick="openModal('deleteProjectModal')">Delete Project</button>
         </div>
       </div>
     {% elif is_member %}
       <div class="page-header" style="margin-top: 20px;">
         <div class="project-actions">
-          <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_resign' project.pk %}'">Resign from Project</button>
+          <button type="button" class="secondary-btn" onclick="openModal('resignModal')">Resign from Project</button>
         </div>
       </div>
     {% endif %}
 
   </div>
 
+  <!-- ============ Confirmation modals (share .modal-overlay from styles.css) ============ -->
+
+  {% if is_pm %}
+    <!-- Delete Project -->
+    <div class="modal-overlay" id="deleteProjectModal">
+      <div class="modal-box">
+        <h3>Delete Project</h3>
+        <p class="hint">
+          This will permanently delete "{{ project.title }}" along with all of its roles, job ads,
+          and membership records. This cannot be undone.
+        </p>
+        <form method="POST" action="{% url 'projects:project_delete' project.pk %}"
+              style="background:none;border:none;box-shadow:none;padding:0;">
+          {% csrf_token %}
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" onclick="closeModal('deleteProjectModal')">Cancel</button>
+            <button type="submit" class="remove-btn">Delete Project</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Remove Member (generic — form action/name filled in by JS per row) -->
+    <div class="modal-overlay" id="removeMemberModal">
+      <div class="modal-box">
+        <h3>Remove Member</h3>
+        <p class="hint">
+          Remove <strong id="removeMemberName"></strong> from this project?
+          They will lose access to the workspace and their role will be freed up.
+        </p>
+        <form method="POST" id="removeMemberForm"
+              style="background:none;border:none;box-shadow:none;padding:0;">
+          {% csrf_token %}
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" onclick="closeModal('removeMemberModal')">Cancel</button>
+            <button type="submit" class="remove-btn">Remove</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Role (generic — form action/title filled in by JS per row) -->
+    <div class="modal-overlay" id="deleteRoleModal">
+      <div class="modal-box">
+        <h3>Delete Role</h3>
+        <p class="hint">
+          Delete the <strong id="deleteRoleName"></strong> role? Any open job ad for it will be
+          cancelled. This cannot be undone.
+        </p>
+        <form method="POST" id="deleteRoleForm"
+              style="background:none;border:none;box-shadow:none;padding:0;">
+          {% csrf_token %}
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" onclick="closeModal('deleteRoleModal')">Cancel</button>
+            <button type="submit" class="remove-btn">Delete Role</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {% elif is_member %}
+    <!-- Resign -->
+    <div class="modal-overlay" id="resignModal">
+      <div class="modal-box">
+        <h3>Resign from Project</h3>
+        <p class="hint">Are you sure you want to resign from "{{ project.title }}"? This cannot be undone.</p>
+        <form method="POST" action="{% url 'projects:project_resign' project.pk %}"
+              style="background:none;border:none;box-shadow:none;padding:0;">
+          {% csrf_token %}
+          <label for="resignReason">Reason for resigning</label>
+          <textarea id="resignReason" name="reason" rows="4"
+                    placeholder="Please state your reason for resigning..." required></textarea>
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" onclick="closeModal('resignModal')">Cancel</button>
+            <button type="submit" class="remove-btn">Confirm Resignation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>
