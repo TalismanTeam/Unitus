@@ -124,7 +124,7 @@ def project_add_role(request, pk):
 
         JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
         messages.success(request, f'Role "{role.role_title}" added and job ad published.')
-        return redirect('projects:project_add_role', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     existing_roles = project.projectrole_set.select_related('jobad').all()
     return render(request, 'projects/project_add_role.html', {
