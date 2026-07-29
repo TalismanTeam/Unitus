@@ -18,6 +18,13 @@ class ProjectForm(forms.ModelForm):
 class ProjectRoleForm(forms.ModelForm):
     """Step 2: one role at a time. Project is set in the view."""
 
+    is_owner_role = forms.BooleanField(
+        required=False,
+        label="This is the project owner's own role",
+        help_text="Check this only if YOU (the PM) will personally fill this role. "
+                  "Leave unchecked to publish it as an open job ad.",
+    )
+
     class Meta:
         model = ProjectRole
         fields = ['role_title', 'role_description', 'capacity']
@@ -73,7 +80,6 @@ class TransferOwnershipForm(forms.Form):
 
 class ProjectEditForm(forms.ModelForm):
 
-
     class Meta:
         model = Project
         fields = ['title', 'short_description', 'full_description', 'duration_days']
@@ -84,7 +90,6 @@ class ProjectEditForm(forms.ModelForm):
 
 
 class ProjectRoleEditForm(forms.ModelForm):
-
 
     class Meta:
         model = ProjectRole
@@ -101,7 +106,6 @@ class ProjectRoleEditForm(forms.ModelForm):
 
 
 class ProjectResignForm(forms.Form):
-
 
     reason = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Please state your reason for resigning...'}),

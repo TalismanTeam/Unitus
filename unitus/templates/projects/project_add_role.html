@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Unitas - {{ project.title }} - Add Role</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="page-header">
+      <h2>{{ project.title }} — Add Role</h2>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Go to Workspace</a>
+    </div>
+
+    <p class="hint">
+      Every role you add generates a job ad automatically — unless you mark it
+      as your own role, in which case it's assigned to you directly and no ad
+      is published for that slot.
+    </p>
+
+    {% if existing_roles %}
+      <h3>Roles added so far</h3>
+      <div id="rolesList">
+        {% for role in existing_roles %}
+          <div class="list-item">
+            <p><strong>{{ role.role_title }}</strong> (capacity: {{ role.capacity }})</p>
+            <p class="hint">{{ role.role_description }}</p>
+            <p>
+              <strong>Ad status:</strong>
+              {% if role.jobad %}{{ role.jobad.get_status_display }}{% else %}—{% endif %}
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+      <hr>
+    {% endif %}
+
+    <h3>Add a new role</h3>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {% if role_form.non_field_errors %}
+        <p style="color:#ef4444;">{{ role_form.non_field_errors }}</p>
+      {% endif %}
+
+      <label for="{{ role_form.role_title.id_for_label }}">Role title</label>
+      {{ role_form.role_title }}
+      {% if role_form.role_title.errors %}<p style="color:#ef4444;">{{ role_form.role_title.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.capacity.id_for_label }}">Capacity (number of people needed)</label>
+      {{ role_form.capacity }}
+      {% if role_form.capacity.errors %}<p style="color:#ef4444;">{{ role_form.capacity.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.role_description.id_for_label }}">Role description (shown on the advertisement)</label>
+      {{ role_form.role_description }}
+      {% if role_form.role_description.errors %}<p style="color:#ef4444;">{{ role_form.role_description.errors }}</p>{% endif %}
+
+      <label class="inline-check">
+        {{ role_form.is_owner_role }}
+        This is the project owner's own role
+      </label>
+      {% if pm_already_has_role %}
+        <p class="hint">You already have a role on this project — checking this will show an error.</p>
+      {% endif %}
+
+      <hr>
+
+      <h4>Required skills for this role</h4>
+      <p class="hint">Optional — pick a skill and the minimum mastery level required for each row you fill in.</p>
+
+      {{ formset.management_form }}
+      <div id="skillFormsList">
+        {% for skill_form in formset %}
+          <div class="role-card">
+            {{ skill_form.id }}
+            <div class="skill-row">
+              {{ skill_form.skill }}
+              {{ skill_form.min_required_level }}
+            </div>
+            {% if skill_form.skill.errors %}<p style="color:#ef4444;">{{ skill_form.skill.errors }}</p>{% endif %}
+            {% if skill_form.min_required_level.errors %}<p style="color:#ef4444;">{{ skill_form.min_required_level.errors }}</p>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <hr>
+      <button type="submit">Add Role</button>
+    </form>
+
+    <div class="page-header" style="margin-top: 20px;">
+      <a href="{% url 'projects:project_workspace' project.pk %}">I'm done adding roles — go to workspace</a>
+    </div>
+
+  </div>
+</body>
+</html>
