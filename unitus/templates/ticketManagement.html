@@ -55,10 +55,10 @@
 <body style="direction: ltr !important; text-align: left !important;">
   <div class="container" style="max-width: 1100px; direction: ltr !important;">
     <nav>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>  
+      <a href="{% url 'accounts:profile-page' %}" >Profile</a>  
       <a href="{% url 'projects:home' %}">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
-      <a href="ticketManagement.html">Tickets</a>
+      <a href="ticketManagement.html"class="active">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
 
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
