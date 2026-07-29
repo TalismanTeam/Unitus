@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Unitas - Resign - {{ project.title }}</title>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="page-header">
+      <h2>Resign — {{ project.title }}</h2>
+      <span class="hint">This sends a resignation request to the project manager; you stay an active member until they approve it.</span>
+    </div>
+
+    <p><a href="{% url 'projects:project_workspace' project.pk %}">&larr; Back to project</a></p>
+
+    {% if already_pending %}
+      <p class="hint">You already have a pending resignation request for this role — no need to submit another.</p>
+    {% else %}
+      <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <p class="hint" style="color:#ef4444;">{{ form.non_field_errors|join:" " }}</p>
+        {% endif %}
+
+        <label for="{{ form.reason.id_for_label }}">Reason for resigning</label>
+        {{ form.reason }}
+        {% if form.reason.errors %}
+          <p class="hint" style="color:#ef4444; margin-top:-16px;">{{ form.reason.errors|join:" " }}</p>
+        {% endif %}
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="submit" class="remove-btn">Confirm Resignation</button>
+          <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn" style="text-decoration:none; display:inline-flex; align-items:center; padding:0 16px;">Cancel</a>
+        </div>
+      </form>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

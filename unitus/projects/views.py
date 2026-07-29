@@ -6,6 +6,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from skills.models import UserSkill
 
+from collaboration.models import Ticket
+
 from .forms import (
     ProjectEditForm,
     ProjectForm,
@@ -364,18 +366,34 @@ def project_resign(request, pk):
     if not member:
         raise PermissionDenied('You are not an active member of this project.')
 
+    already_pending = Ticket.objects.filter(
+        sender=request.user, project=project, project_role=member.project_role,
+        ticket_type=Ticket.TicketType.RESIGNATION,
+        status=Ticket.Status.PENDING_FEEDBACK,
+    ).exists()
+
     if request.method == 'POST':
+        if already_pending:
+            messages.error(request, 'You already have a pending resignation request for this role.')
+            return redirect('projects:project_workspace', pk=project.pk)
+
         form = ProjectResignForm(request.POST)
         if form.is_valid():
-            member.member_status = ProjectMember.MemberStatus.RESIGNED
-            member.save(update_fields=['member_status'])
+            Ticket.objects.create(
+                sender=request.user,
+                receiver=project.pm,
+                project=project,
+                project_role=member.project_role,
+                ticket_type=Ticket.TicketType.RESIGNATION,
+                message_text=form.cleaned_data['reason'],
+            )
 
-            if member.project_role:
-                sync_job_ad_status_for_role(member.project_role)
-
-            messages.success(request, 'You have resigned from the project.')
-            return redirect('accounts:my-projects')
+            messages.success(
+                request,
+                'Your resignation request has been sent to the project manager for approval.',
+            )
+            return redirect('projects:project_workspace', pk=project.pk)
     else:
         form = ProjectResignForm()
 
-    return render(request, 'projects/project_resign.html', {'project': project, 'form': form})
+    return render(request, 'projects/project_resign.html', {'project': project, 'form': form, 'already_pending': already_pending})

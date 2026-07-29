@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
 from projects.models import Project, ProjectRole, ProjectMember
+from projects.services import sync_job_ad_status_for_role
 
 from .models import Ticket
 from .serialization import serialize_ticket
@@ -353,6 +354,7 @@ def _apply_approval_side_effects(ticket):
                 'member_status': ProjectMember.MemberStatus.ACTIVE,
             },
         )
+        sync_job_ad_status_for_role(role)
 
     elif ticket.ticket_type == Ticket.TicketType.RESIGNATION:
         membership = ProjectMember.objects.filter(
@@ -366,6 +368,9 @@ def _apply_approval_side_effects(ticket):
 
         membership.member_status = ProjectMember.MemberStatus.RESIGNED
         membership.save(update_fields=['member_status'])
+
+        if membership.project_role:
+            sync_job_ad_status_for_role(membership.project_role)
 
     return None
 
