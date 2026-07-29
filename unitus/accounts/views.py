@@ -1,18 +1,23 @@
 import json
+import re
+from datetime import date
 
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
-from accounts.models import User, Avatar
+from accounts.models import User, Avatar, UserPrivacySettings
 from skills.models import Skill, UserSkill
 from skills.choices import MasteryLevel
 from moderation.models import Report
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect
 
 from .forms import RegisterForm, LoginForm
@@ -23,13 +28,29 @@ from .serialization import (
     serialize_avatar,
     serialize_me,
     serialize_public_profile,
+    serialize_privacy_settings,
     serialize_user_skill,
     serialize_project_summary,
     serialize_report,
 )
 
+PRIVACY_PATCHABLE_FIELDS = [
+    "show_phone", "show_email", "show_location",
+    "show_birth_year", "show_education_background", "show_gender",
+]
+
+# E.164-ish: optional leading +, 7-15 digits total. Loose on purpose since
+# phone_number has no fixed country format in the model.
+PHONE_RE = re.compile(r"^\+?[0-9]{7,15}$")
+
+# Letters, digits, underscore, period, hyphen; 3-50 chars (matches the
+# model's max_length=50 on User.username).
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,50}$")
+
+MIN_BIRTH_YEAR = 1900
+
 ME_PATCHABLE_FIELDS = [
-    "first_name", "last_name", "gender", "birth_year",
+    "username", "first_name", "last_name", "gender", "birth_year",
     "phone_number", "location", "education_background", "about_me",
 ]
 
@@ -80,6 +101,17 @@ def me_view(request):
     if data is None:
         return bad_request("invalid JSON body")
 
+    if "username" in data:
+        username = (data["username"] or "").strip()
+        if not USERNAME_RE.match(username):
+            return bad_request(
+                "username must be 3-50 characters and contain only letters, "
+                "numbers, underscores, periods, or hyphens"
+            )
+        if User.objects.exclude(pk=user.pk).filter(username__iexact=username).exists():
+            return bad_request("That username is already taken.")
+        data["username"] = username
+
     if "gender" in data and data["gender"] not in User.Gender.values:
         return bad_request(f"gender must be one of {User.Gender.values}")
 
@@ -88,12 +120,30 @@ def me_view(request):
             data["birth_year"] = int(data["birth_year"])
         except (TypeError, ValueError):
             return bad_request("birth_year must be an integer")
+        current_year = date.today().year
+        if not (MIN_BIRTH_YEAR <= data["birth_year"] <= current_year):
+            return bad_request(f"birth_year must be between {MIN_BIRTH_YEAR} and {current_year}")
+
+    if "phone_number" in data:
+        phone = data["phone_number"]
+        if phone not in (None, ""):
+            if not PHONE_RE.match(phone):
+                return bad_request("phone_number must contain 7-15 digits, optionally starting with '+'")
+        else:
+            phone = None
+        data["phone_number"] = phone
 
     for field in ME_PATCHABLE_FIELDS:
         if field in data:
             setattr(user, field, data[field])
 
-    user.save(update_fields=ME_PATCHABLE_FIELDS)
+    try:
+        user.save(update_fields=ME_PATCHABLE_FIELDS)
+    except IntegrityError:
+        return bad_request(
+            "That username or phone number is already in use by another account."
+        )
+
     return JsonResponse(serialize_me(user))
 
 
@@ -219,6 +269,75 @@ def work_preferences_view(request):
         {"detail": "work-preferences is not yet backed by a model — see README."},
         status=501,
     )
+
+
+# ---------------------------------------------------------------------------
+# GET/PATCH /users/me/privacy-settings
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def privacy_settings_view(request):
+    settings_obj, _ = UserPrivacySettings.objects.get_or_create(user=request.user)
+
+    if request.method == "GET":
+        return JsonResponse(serialize_privacy_settings(settings_obj))
+
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    for field in PRIVACY_PATCHABLE_FIELDS:
+        if field in data and not isinstance(data[field], bool):
+            return bad_request(f"{field} must be a boolean")
+
+    for field in PRIVACY_PATCHABLE_FIELDS:
+        if field in data:
+            setattr(settings_obj, field, data[field])
+
+    settings_obj.save(update_fields=PRIVACY_PATCHABLE_FIELDS)
+    return JsonResponse(serialize_privacy_settings(settings_obj))
+
+
+# ---------------------------------------------------------------------------
+# PATCH /users/me/password
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["PATCH"])
+def change_password_view(request):
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    if not old_password or not new_password or not confirm_password:
+        return bad_request("old_password, new_password and confirm_password are required")
+
+    if not request.user.check_password(old_password):
+        return bad_request("Old password is incorrect.")
+
+    if new_password != confirm_password:
+        return bad_request("New password and confirmation do not match.")
+
+    if new_password == old_password:
+        return bad_request("New password must be different from the old password.")
+
+    try:
+        validate_password(new_password, user=request.user)
+    except DjangoValidationError as e:
+        return bad_request(" ".join(e.messages))
+
+    request.user.set_password(new_password)
+    request.user.save(update_fields=["password"])
+    # Without this, changing the password invalidates the session hash and
+    # immediately logs the user out of their own request.
+    update_session_auth_hash(request, request.user)
+
+    return JsonResponse({"detail": "Password updated successfully."})
 
 
 # ---------------------------------------------------------------------------

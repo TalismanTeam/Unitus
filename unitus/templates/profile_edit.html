@@ -28,16 +28,23 @@
 <body style="direction: ltr !important; text-align: left !important;">
   <div class="container" style="direction: ltr !important;">
     <nav>
-      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>  
       <a href="{% url 'projects:home' %}">Projects</a>
-      <a href="project_advertisements.html">Advertisements</a>
-      <a href="search.html">Search</a>
-      <a href="matching.html">Matchmaking</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
-      <a href="chat.html">Chat</a>
-      <a href="notification.html">Notifications</a>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+
+      <!-- <a href="notification.html">Notifications</a>
+      <a href="project_advertisements.html">Advertisements</a>
+      <a href="{% url 'home' %}">Home</a>
       <a href="settings.html">Settings</a>
+      <a href="matching.html">Matchmaking</a> -->
+
     </nav>
 
     <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 25px;">
@@ -53,6 +60,10 @@
           <span style="color: var(--muted); font-size: 13px;">Loading avatar options...</span>
         </div>
 
+        <label style="font-weight: bold; color: var(--text);">Username:</label>
+        <input type="text" id="usernameInput" placeholder="Enter a username...">
+        <p id="usernameError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
         <label style="font-weight: bold; color: var(--text);">First Name:</label>
         <input type="text" id="firstNameInput" placeholder="Enter your first name...">
 
@@ -64,6 +75,25 @@
 
         <label style="font-weight: bold; color: var(--text);">Location:</label>
         <input type="text" id="locationInput" placeholder="Example: New York, USA">
+
+        <label style="font-weight: bold; color: var(--text);">Gender:</label>
+        <select id="genderInput">
+          <option value="NOT_SPECIFIED">Not Specified</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
+        </select>
+
+        <label style="font-weight: bold; color: var(--text);">Birth Year:</label>
+        <input type="number" id="birthYearInput" placeholder="Example: 1995" min="1900">
+        <p id="birthYearError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
+        <label style="font-weight: bold; color: var(--text);">Phone Number:</label>
+        <input type="tel" id="phoneNumberInput" placeholder="Example: +12025550123">
+        <p id="phoneNumberError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
+        <label style="font-weight: bold; color: var(--text);">Education Background:</label>
+        <textarea id="educationInput" placeholder="Example: BSc Computer Science, XYZ University"></textarea>
 
         <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
           <label style="font-weight: bold; color: var(--text);">Work Preferences:</label>
@@ -111,7 +141,33 @@
         </div>
 
         <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="font-weight: bold; color: var(--text);">Privacy Settings (not connected — no backend endpoint exists yet):</label>
+          <label style="font-weight: bold; color: var(--text);">Privacy Settings:</label>
+          <p style="color: var(--muted); font-size: 12px; margin: 6px 0 10px;">
+            Choose which of these fields show on your public profile (visible to other users).
+            Unchecked fields stay hidden from everyone but you.
+          </p>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showGenderCheckbox" style="width: auto;"> Show Gender</label>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showBirthYearCheckbox" style="width: auto;"> Show Birth Year</label>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showPhoneCheckbox" style="width: auto;"> Show Phone Number</label>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showEmailCheckbox" style="width: auto;"> Show Email</label>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showLocationCheckbox" style="width: auto;"> Show Location</label>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: var(--text);">
+            <label style="cursor: pointer;"><input type="checkbox" id="showEducationCheckbox" style="width: auto;"> Show Education Background</label>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+          <label style="font-weight: bold; color: var(--text);">Other Privacy Toggles (not connected — no backend field exists yet):</label>
           <div style="margin: 10px 0; font-size: 14px; color: var(--text);">
             <label style="cursor: pointer;"><input type="checkbox" checked disabled style="width: auto;"> Make portfolio public</label>
           </div>
@@ -122,6 +178,25 @@
 
         <button type="submit" style="margin-top: 15px; width: 100%;">Save Changes</button>
         <p id="editProfileStatus" style="font-size: 13px; margin-top: 8px;"></p>
+      </form>
+    </div>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 25px;">
+      <h2 style="margin: 0 0 10px; color: var(--text);">Change Password</h2>
+
+      <form id="changePasswordForm">
+        <label style="font-weight: bold; color: var(--text);">Old Password:</label>
+        <input type="password" id="oldPasswordInput" placeholder="Enter your current password" autocomplete="current-password">
+
+        <label style="font-weight: bold; color: var(--text);">New Password:</label>
+        <input type="password" id="newPasswordInput" placeholder="Enter a new password" autocomplete="new-password">
+
+        <label style="font-weight: bold; color: var(--text);">Repeat New Password:</label>
+        <input type="password" id="confirmPasswordInput" placeholder="Re-enter the new password" autocomplete="new-password">
+        <p id="passwordError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
+        <button type="submit" style="margin-top: 15px; width: 100%;">Change Password</button>
+        <p id="changePasswordStatus" style="font-size: 13px; margin-top: 8px;"></p>
       </form>
     </div>
   </div>

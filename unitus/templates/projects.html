@@ -1,221 +1,224 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" dir="ltr">
-
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
     <title>Unitas - Project Management</title>
-</head>
+  </head>
 
-<body>
+  <body>
+    <div class="container">
+      <!-- Navigation -->
+      <nav>
+        <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
+        <a href="{% url 'projects:home' %}">Projects</a>
+        <a href="{% url 'search:search_page' %}">Search</a>
+        <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+        <a href="{% url 'chat:inbox' %}">Chat</a>
 
-  <div class="container">
+        <form
+          action="{% url 'accounts:logout' %}"
+          method="POST"
+          style="
+            display: inline;
+            background: transparent;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            margin-left: auto;
+          "
+        >
+          {% csrf_token %}
+          <button
+            type="submit"
+            style="
+              background: transparent;
+              color: #ef4444;
+              border: 1px solid #ef4444;
+              padding: 6px 12px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: 500;
+            "
+          >
+            Logout
+          </button>
+        </form>
 
-    <!-- Navigation -->
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="projects.html" class="active">Projects</a>
+        <!-- <a href="notification.html">Notifications</a>
       <a href="project_advertisements.html">Advertisements</a>
-      <a href="search.html">Search</a>
-      <a href="matching.html">Matchmaking</a>
-      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
-      <a href="chat.html">Chat</a>
-      <a href="notification.html">Notifications</a>
-      <a href="userprofile.html">Profile</a>
+      <a href="{% url 'home' %}">Home</a>
       <a href="settings.html">Settings</a>
-    </nav>
+      <a href="matching.html">Matchmaking</a> -->
+      </nav>
 
+      <!-- Page Header -->
+      <div class="page-header">
+        <h2>Project Management</h2>
 
-    <!-- Page Header -->
-    <div class="page-header">
+        <!-- PM-001: Create Project -->
+        <button type="button" onclick="location.href = 'project_create.html'">
+          Create New Project
+        </button>
+      </div>
 
-      <h2>Project Management</h2>
-
-      <!-- PM-001: Create Project -->
-      <button type="button" onclick="location.href='project_create.html'">
-        Create New Project
-      </button>
-
-    </div>
-
-
-    <!-- Project List -->
-    <div id="project-list">
-
-
-      <!-- Project Item -->
-      <div class="list-item">
-
-        <!-- PM-002: View Project -->
-        <h3>
-          Project Title
-        </h3>
-
-        <p>
-          Project description
-        </p>
-
-
-        <!-- PM-004: Project Status -->
-        <p>
-          <strong>Status:</strong>
-          <span id="status-label-1">Recruiting</span>
-        </p>
-
-
-        <!-- PM-007: Project Ownership -->
-        <p>
-          <strong>Owner:</strong>
-          Owner name
-        </p>
-
-
-        <!-- Project Actions -->
-        <div class="project-actions">
-
+      <!-- Project List -->
+      <div id="project-list">
+        <!-- Project Item -->
+        <div class="list-item">
           <!-- PM-002: View Project -->
-          <button type="button">
-            View Project
-          </button>
+          <h3>Project Title</h3>
 
-          <!-- PM-003: Edit Project -->
-          <button type="button">
-            Edit Project
-          </button>
+          <p>Project description</p>
 
-          <!-- PM-004/PM-005: Change Status -->
-          <button type="button" onclick="openStatusModal(1)">
-            Change Status
-          </button>
+          <!-- PM-004: Project Status -->
+          <p>
+            <strong>Status:</strong>
+            <span id="status-label-1">Recruiting</span>
+          </p>
 
+          <!-- PM-007: Project Ownership -->
+          <p>
+            <strong>Owner:</strong>
+            Owner name
+          </p>
+
+          <!-- Project Actions -->
+          <div class="project-actions">
+            <!-- PM-002: View Project -->
+            <button type="button">View Project</button>
+
+            <!-- PM-003: Edit Project -->
+            <button type="button">Edit Project</button>
+
+            <!-- PM-004/PM-005: Change Status -->
+            <button type="button" onclick="openStatusModal(1)">
+              Change Status
+            </button>
+          </div>
         </div>
 
-      </div>
+        <!-- Another Project Item -->
+        <div class="list-item">
+          <h3>Project Title</h3>
 
+          <p>Project description</p>
 
-      <!-- Another Project Item -->
-      <div class="list-item">
+          <p>
+            <strong>Status:</strong>
+            <span id="status-label-2">In Progress</span>
+          </p>
 
-        <h3>
-          Project Title
-        </h3>
+          <p>
+            <strong>Owner:</strong>
+            Owner name
+          </p>
 
-        <p>
-          Project description
-        </p>
+          <div class="project-actions">
+            <button type="button">View Project</button>
 
-        <p>
-          <strong>Status:</strong>
-          <span id="status-label-2">In Progress</span>
-        </p>
+            <button type="button">Edit Project</button>
 
-        <p>
-          <strong>Owner:</strong>
-          Owner name
-        </p>
-
-        <div class="project-actions">
-
-          <button type="button">
-            View Project
-          </button>
-
-          <button type="button">
-            Edit Project
-          </button>
-
-          <button type="button" onclick="openStatusModal(2)">
-            Change Status
-          </button>
-
+            <button type="button" onclick="openStatusModal(2)">
+              Change Status
+            </button>
+          </div>
         </div>
-
       </div>
-
-
     </div>
 
-  </div>
+    <!-- PM-004/PM-005: Status Change Modal -->
+    <div class="modal-overlay" id="statusModalOverlay">
+      <div class="modal-box">
+        <h3>Change Project Status</h3>
 
-
-  <!-- PM-004/PM-005: Status Change Modal -->
-  <div class="modal-overlay" id="statusModalOverlay">
-    <div class="modal-box">
-
-      <h3>Change Project Status</h3>
-
-      <label>New status</label>
-      <select id="newStatusSelect" onchange="toggleTerminationReason()">
-        <option value="recruiting">Recruiting</option>
-        <option value="in_progress">In Progress</option>
-        <option value="suspended">Suspended</option>
-        <option value="terminated">Terminated / Completed</option>
-      </select>
-
-      <!-- Shown only when "Terminated / Completed" is selected -->
-      <div id="terminationReasonBlock" class="hidden">
-        <label>Termination reason</label>
-        <select id="terminationReasonSelect">
-          <option value="success">Successful completion</option>
-          <option value="internal_issues">Internal team issues</option>
-          <option value="team_failure">Team failure</option>
-          <option value="owner_withdrawal">Owner withdrawal</option>
-          <option value="other">Other</option>
+        <label>New status</label>
+        <select id="newStatusSelect" onchange="toggleTerminationReason()">
+          <option value="recruiting">Recruiting</option>
+          <option value="in_progress">In Progress</option>
+          <option value="suspended">Suspended</option>
+          <option value="terminated">Terminated / Completed</option>
         </select>
+
+        <!-- Shown only when "Terminated / Completed" is selected -->
+        <div id="terminationReasonBlock" class="hidden">
+          <label>Termination reason</label>
+          <select id="terminationReasonSelect">
+            <option value="success">Successful completion</option>
+            <option value="internal_issues">Internal team issues</option>
+            <option value="team_failure">Team failure</option>
+            <option value="owner_withdrawal">Owner withdrawal</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <p class="hint">
+          This action requires confirmation. Members will be notified of the
+          status change.
+        </p>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="secondary-btn"
+            onclick="closeStatusModal()"
+          >
+            Cancel
+          </button>
+          <button type="button" onclick="confirmStatusChange()">Confirm</button>
+        </div>
       </div>
-
-      <p class="hint">
-        This action requires confirmation. Members will be notified of the status change.
-      </p>
-
-      <div class="modal-actions">
-        <button type="button" class="secondary-btn" onclick="closeStatusModal()">Cancel</button>
-        <button type="button" onclick="confirmStatusChange()">Confirm</button>
-      </div>
-
     </div>
-  </div>
 
+    <script>
+      let currentProjectId = null;
+      const STATUS_LABELS = {
+        recruiting: "Recruiting",
+        in_progress: "In Progress",
+        suspended: "Suspended",
+        terminated: "Terminated / Completed",
+      };
 
-  <script>
-    let currentProjectId = null;
-    const STATUS_LABELS = {
-      recruiting: "Recruiting",
-      in_progress: "In Progress",
-      suspended: "Suspended",
-      terminated: "Terminated / Completed"
-    };
+      function openStatusModal(projectId) {
+        currentProjectId = projectId;
+        document.getElementById("statusModalOverlay").classList.add("visible");
+        toggleTerminationReason();
+      }
 
-    function openStatusModal(projectId) {
-      currentProjectId = projectId;
-      document.getElementById('statusModalOverlay').classList.add('visible');
-      toggleTerminationReason();
-    }
+      function closeStatusModal() {
+        document
+          .getElementById("statusModalOverlay")
+          .classList.remove("visible");
+        currentProjectId = null;
+      }
 
-    function closeStatusModal() {
-      document.getElementById('statusModalOverlay').classList.remove('visible');
-      currentProjectId = null;
-    }
+      function toggleTerminationReason() {
+        const isTerminated =
+          document.getElementById("newStatusSelect").value === "terminated";
+        document
+          .getElementById("terminationReasonBlock")
+          .classList.toggle("hidden", !isTerminated);
+      }
 
-    function toggleTerminationReason() {
-      const isTerminated = document.getElementById('newStatusSelect').value === 'terminated';
-      document.getElementById('terminationReasonBlock').classList.toggle('hidden', !isTerminated);
-    }
+      function confirmStatusChange() {
+        // In Django: this will POST { project_id, new_status, termination_reason } to the server
+        const status = document.getElementById("newStatusSelect").value;
+        const reason = document.getElementById("terminationReasonSelect").value;
+        const label = STATUS_LABELS[status];
 
-    function confirmStatusChange() {
-      // In Django: this will POST { project_id, new_status, termination_reason } to the server
-      const status = document.getElementById('newStatusSelect').value;
-      const reason = document.getElementById('terminationReasonSelect').value;
-      const label = STATUS_LABELS[status];
+        const target = document.getElementById(
+          "status-label-" + currentProjectId,
+        );
+        if (target) target.innerText = label;
 
-      const target = document.getElementById('status-label-' + currentProjectId);
-      if (target) target.innerText = label;
-
-      alert('Status changed to: ' + label + (status === 'terminated' ? ' (Reason: ' + reason + ')' : ''));
-      closeStatusModal();
-    }
-  </script>
-
-</body>
+        alert(
+          "Status changed to: " +
+            label +
+            (status === "terminated" ? " (Reason: " + reason + ")" : ""),
+        );
+        closeStatusModal();
+      }
+    </script>
+  </body>
 </html>

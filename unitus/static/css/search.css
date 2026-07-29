@@ -1,0 +1,161 @@
+/* Unitus - Search & Discovery Module
+   Uses the existing design tokens from styles.css
+   (--surface, --surface-2, --border, --radius, --accent, --text, --muted). */
+
+.search-module {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 28px;
+}
+
+.search-module-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.search-module-header h2 { margin: 0; font-size: 17px; }
+.search-module-icon { font-size: 20px; }
+
+.search-bar-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.search-bar-row input[type="text"] { margin: 0; flex: 1; }
+.search-bar-row button { white-space: nowrap; }
+
+.filter-toggle-btn {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+.filter-toggle-btn.active { border-color: var(--accent); color: var(--accent); }
+
+.filter-panel {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+.filter-panel.open { display: grid; }
+
+.filter-field label {
+    display: block; font-size: 12px; color: var(--muted);
+    margin-bottom: 4px; font-weight: 600;
+}
+.filter-field select, .filter-field input {
+    margin: 0; width: 100%; padding: 9px 10px; font-size: 13px;
+}
+.filter-field-check {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 9px;
+}
+.filter-field-check input { width: auto; margin: 0; }
+.filter-field-check label { margin: 0; font-size: 13px; color: var(--text); font-weight: normal; }
+
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex; gap: 10px; margin-top: 4px;
+}
+.filter-actions button { padding: 8px 16px; font-size: 13px; }
+
+.category-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+}
+.chip {
+    background: var(--surface-2); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 14px; font-size: 12.5px; cursor: pointer;
+    transition: 0.15s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.active { background: var(--accent); color: #1a1200; border-color: var(--accent); font-weight: bold; }
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.result-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card-top h4 { margin: 0; font-size: 15px; }
+.posted-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.project-name { margin: 0; font-size: 13px; color: var(--accent); font-weight: 600; }
+.short-desc, .role-desc { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.skill-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.skill-tag {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 3px 10px; font-size: 11px; color: var(--text);
+}
+
+.card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.duration { font-size: 12px; color: var(--muted); }
+
+.user-card { flex-direction: row; align-items: flex-start; }
+.user-avatar {
+    width: 46px; height: 46px; min-width: 46px; border-radius: 50%;
+    background: var(--accent); color: #1a1200;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 18px;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name-row { display: flex; align-items: center; gap: 8px; }
+.user-name-row strong { font-size: 14px; }
+.user-fullname { margin: 2px 0; font-size: 12.5px; color: var(--muted); }
+.user-location { margin: 2px 0; font-size: 12px; color: var(--muted); }
+
+.badge-open {
+    background: rgba(34, 197, 94, 0.15); color: #22c55e;
+    font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px;
+}
+
+.view-profile-btn {
+    display: inline-block; margin-top: 8px;
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    padding: 5px 14px; border-radius: 6px; font-size: 12px; text-decoration: none;
+}
+.view-profile-btn:hover { background: var(--accent); color: #1a1200; }
+
+.apply-btn:disabled {
+    background: var(--surface); color: var(--muted); border: 1px solid var(--border);
+    cursor: not-allowed; font-size: 12px; padding: 6px 12px;
+}
+
+.empty-state, .loading-state, .error-state {
+    text-align: center; color: var(--muted); padding: 30px; font-size: 14px;
+    grid-column: 1 / -1;
+}
+.error-state { color: #ef4444; }
+
+.pagination-controls {
+    display: flex; justify-content: center; align-items: center;
+    gap: 12px; margin-top: 18px;
+}
+.pagination-controls button {
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+    padding: 6px 14px; font-size: 13px;
+}
+.pagination-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-info { font-size: 12.5px; color: var(--muted); }
+
+.login-prompt {
+    text-align: center; padding: 24px; color: var(--muted); font-size: 14px;
+}
+.login-prompt a { color: var(--accent); }

@@ -95,7 +95,7 @@ def project_create(request):
             project.pm = request.user
             project.save()
             messages.success(request, 'Project created. Now add at least one role.')
-            return redirect('project_add_role', pk=project.pk)
+            return redirect('projects:project_add_role', pk=project.pk)
     else:
         form = ProjectForm()
     return render(request, 'projects/project_create.html', {'form': form})
@@ -124,7 +124,7 @@ def project_add_role(request, pk):
 
         JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
         messages.success(request, f'Role "{role.role_title}" added and job ad published.')
-        return redirect('project_add_role', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     existing_roles = project.projectrole_set.select_related('jobad').all()
     return render(request, 'projects/project_add_role.html', {
@@ -196,7 +196,7 @@ def project_state_change(request, pk):
                     status=JobAd.Status.CANCELLED
                 )
             messages.success(request, 'Project status updated.')
-            return redirect('project_workspace', pk=project.pk)
+            return redirect('projects:project_workspace', pk=project.pk)
     else:
         form = ProjectStateChangeForm(instance=project)
     return render(request, 'projects/project_state_change.html', {'project': project, 'form': form})
@@ -217,7 +217,7 @@ def project_remove_member(request, pk, member_id):
         if member.project_role:
             sync_job_ad_status_for_role(member.project_role)
         messages.success(request, f'{member.user.username} has been removed from the project.')
-        return redirect('project_workspace', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     return render(request, 'projects/project_remove_member_confirm.html', {
         'project': project, 'member': member,
@@ -240,7 +240,7 @@ def project_transfer_ownership(request, pk):
 
     if not candidates.exists():
         messages.error(request, 'There are no active members to transfer ownership to.')
-        return redirect('project_workspace', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     if request.method == 'POST':
         form = TransferOwnershipForm(request.POST, candidate_users=candidates)
@@ -254,7 +254,7 @@ def project_transfer_ownership(request, pk):
                 defaults={'member_status': ProjectMember.MemberStatus.ACTIVE},
             )
             messages.success(request, f'Ownership transferred to {new_owner.username}.')
-            return redirect('project_workspace', pk=project.pk)
+            return redirect('projects:project_workspace', pk=project.pk)
     else:
         form = TransferOwnershipForm(candidate_users=candidates)
 
@@ -273,7 +273,7 @@ def project_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Project details updated successfully.')
-            return redirect('project_workspace', pk=project.pk)
+            return redirect('projects:project_workspace', pk=project.pk)
     else:
         form = ProjectEditForm(instance=project)
 
@@ -320,7 +320,7 @@ def project_edit_role(request, pk, role_id):
 
         sync_job_ad_status_for_role(role)
         messages.success(request, f'Role "{role.role_title}" updated successfully.')
-        return redirect('project_workspace', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     return render(request, 'projects/project_edit_role.html', {
         'project': project,
@@ -343,7 +343,7 @@ def project_delete_role(request, pk, role_id):
         JobAd.objects.filter(project_role=role, status=JobAd.Status.OPEN).update(status=JobAd.Status.CANCELLED)
         role.delete()
         messages.success(request, 'Role deleted successfully.')
-        return redirect('project_workspace', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     return render(request, 'projects/project_delete_role_confirm.html', {'project': project, 'role': role})
 
@@ -355,7 +355,7 @@ def project_resign(request, pk):
 
     if is_project_pm(request.user, project):
         messages.error(request, 'Project Managers cannot resign. Transfer ownership first.')
-        return redirect('project_workspace', pk=project.pk)
+        return redirect('projects:project_workspace', pk=project.pk)
 
     member = ProjectMember.objects.filter(
         project=project, user=request.user, member_status=ProjectMember.MemberStatus.ACTIVE

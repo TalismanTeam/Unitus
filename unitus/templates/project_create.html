@@ -1,83 +1,177 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
     <script src="project_storage.js"></script>
     <title>Unitas - Create Project</title>
-</head>
-<body>
-  <div class="container">
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="projects.html" class="active">Projects</a>
+  </head>
+  <body>
+    <div class="container">
+      <nav>
+        <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
+        <a href="{% url 'projects:home' %}">Projects</a>
+        <a href="{% url 'search:search_page' %}">Search</a>
+        <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+        <a href="{% url 'chat:inbox' %}">Chat</a>
+
+        <form
+          action="{% url 'accounts:logout' %}"
+          method="POST"
+          style="
+            display: inline;
+            background: transparent;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            margin-left: auto;
+          "
+        >
+          {% csrf_token %}
+          <button
+            type="submit"
+            style="
+              background: transparent;
+              color: #ef4444;
+              border: 1px solid #ef4444;
+              padding: 6px 12px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: 500;
+            "
+          >
+            Logout
+          </button>
+        </form>
+
+        <!-- <a href="notification.html">Notifications</a>
       <a href="project_advertisements.html">Advertisements</a>
-      <a href="search.html">Search</a>
-      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="{% url 'home' %}">Home</a>
       <a href="settings.html">Settings</a>
-    </nav>
+      <a href="matching.html">Matchmaking</a> -->
+      </nav>
 
-    <h2 id="formTitle">Create New Project</h2>
+      <h2 id="formTitle">Create New Project</h2>
 
-    <!-- In Django: method="POST" action="{% url 'project_create' %}" and {% csrf_token %} are added -->
-    <form id="projectForm" onsubmit="event.preventDefault(); submitProject();">
+      <!-- In Django: method="POST" action="{% url 'project_create' %}" and {% csrf_token %} are added -->
+      <form
+        id="projectForm"
+        onsubmit="
+          event.preventDefault();
+          submitProject();
+        "
+      >
+        <label>Project title</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          placeholder="e.g. Online Marketplace Platform"
+          required
+        />
 
-      <label>Project title</label>
-      <input type="text" id="title" name="title" placeholder="e.g. Online Marketplace Platform" required>
+        <label>Short description (shown on advertisements)</label>
+        <input
+          type="text"
+          id="short_description"
+          name="short_description"
+          maxlength="150"
+          placeholder="One-line summary of the project"
+          required
+        />
 
-      <label>Short description (shown on advertisements)</label>
-      <input type="text" id="short_description" name="short_description" maxlength="150" placeholder="One-line summary of the project" required>
+        <label>Full description</label>
+        <textarea
+          id="full_description"
+          name="full_description"
+          rows="5"
+          placeholder="Full explanation, goals, and details of the project"
+          required
+        ></textarea>
 
-      <label>Full description</label>
-      <textarea id="full_description" name="full_description" rows="5" placeholder="Full explanation, goals, and details of the project" required></textarea>
+        <label>Estimated duration</label>
+        <input
+          type="text"
+          id="duration"
+          name="duration"
+          placeholder="e.g. 3 months"
+          required
+        />
 
-      <label>Estimated duration</label>
-      <input type="text" id="duration" name="duration" placeholder="e.g. 3 months" required>
+        <hr />
 
-      <hr>
+        <h3>Project owner's own role</h3>
+        <p class="hint">
+          Only the project owner (PM) is allowed to have no technical role —
+          purely managerial responsibility.
+        </p>
+        <div class="role-select-row">
+          <label class="inline-check">
+            <input
+              type="checkbox"
+              id="owner_no_technical_role"
+              onchange="toggleOwnerRole()"
+            />
+            Management only (no technical role)
+          </label>
+          <input
+            type="text"
+            id="owner_role"
+            name="owner_role"
+            placeholder="Owner's technical role (e.g. Backend Developer)"
+          />
+        </div>
 
-      <h3>Project owner's own role</h3>
-      <p class="hint">Only the project owner (PM) is allowed to have no technical role — purely managerial responsibility.</p>
-      <div class="role-select-row">
-        <label class="inline-check">
-          <input type="checkbox" id="owner_no_technical_role" onchange="toggleOwnerRole()">
-          Management only (no technical role)
-        </label>
-        <input type="text" id="owner_role" name="owner_role" placeholder="Owner's technical role (e.g. Backend Developer)">
-      </div>
+        <hr />
 
-      <hr>
+        <h3>Required team roles</h3>
+        <p class="hint">
+          For each role, set capacity, required skills, and a description of
+          responsibilities. Every open role automatically generates a separate
+          advertisement.
+        </p>
 
-      <h3>Required team roles</h3>
-      <p class="hint">For each role, set capacity, required skills, and a description of responsibilities. Every open role automatically generates a separate advertisement.</p>
+        <div id="rolesList"></div>
 
-      <div id="rolesList"></div>
+        <button type="button" class="secondary-btn" onclick="addRole()">
+          + Add new role
+        </button>
 
-      <button type="button" class="secondary-btn" onclick="addRole()">+ Add new role</button>
+        <hr />
 
-      <hr>
+        <button type="submit" id="submitBtn">Create Project</button>
+      </form>
+    </div>
 
-      <button type="submit" id="submitBtn">Create Project</button>
-    </form>
-  </div>
+    <script>
+      let roleCount = 0;
+      const SKILL_LEVELS = [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Expert",
+        "Master",
+      ];
+      const params = new URLSearchParams(window.location.search);
+      const editId = params.get("edit");
 
-  <script>
-    let roleCount = 0;
-    const SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert", "Master"];
-    const params = new URLSearchParams(window.location.search);
-    const editId = params.get('edit');
+      function addRole(prefill) {
+        roleCount++;
+        const id = roleCount;
+        const div = document.createElement("div");
+        div.className = "role-card";
+        div.id = "role_" + id;
 
-    function addRole(prefill) {
-      roleCount++;
-      const id = roleCount;
-      const div = document.createElement('div');
-      div.className = 'role-card';
-      div.id = 'role_' + id;
+        const p = prefill || {
+          title: "",
+          capacity: 1,
+          skill: "",
+          skillLevel: "Beginner",
+          description: "",
+        };
 
-      const p = prefill || { title: '', capacity: 1, skill: '', skillLevel: 'Beginner', description: '' };
-
-      div.innerHTML = `
+        div.innerHTML = `
         <div class="role-card-header">
           <strong>Role #${id}</strong>
           <button type="button" class="remove-btn" onclick="removeRole(${id})">Remove</button>
@@ -92,96 +186,106 @@
         <div class="skill-row">
           <input type="text" name="role_skill_${id}" placeholder="e.g. React" value="${p.skill}">
           <select name="role_skill_level_${id}">
-            ${SKILL_LEVELS.map(l => `<option value="${l}" ${l === p.skillLevel ? 'selected' : ''}>${l}</option>`).join('')}
+            ${SKILL_LEVELS.map((l) => `<option value="${l}" ${l === p.skillLevel ? "selected" : ""}>${l}</option>`).join("")}
           </select>
         </div>
 
         <label>Role description (shown on the advertisement)</label>
         <textarea name="role_description_${id}" rows="3" placeholder="What exactly will this person do?">${p.description}</textarea>
       `;
-      document.getElementById('rolesList').appendChild(div);
-    }
+        document.getElementById("rolesList").appendChild(div);
+      }
 
-    function removeRole(id) {
-      const el = document.getElementById('role_' + id);
-      if (el) el.remove();
-    }
+      function removeRole(id) {
+        const el = document.getElementById("role_" + id);
+        if (el) el.remove();
+      }
 
-    function toggleOwnerRole() {
-      const checked = document.getElementById('owner_no_technical_role').checked;
-      document.getElementById('owner_role').disabled = checked;
-      if (checked) document.getElementById('owner_role').value = '';
-    }
+      function toggleOwnerRole() {
+        const checked = document.getElementById(
+          "owner_no_technical_role",
+        ).checked;
+        document.getElementById("owner_role").disabled = checked;
+        if (checked) document.getElementById("owner_role").value = "";
+      }
 
-    function collectRolesFromForm() {
-      const roleCards = document.querySelectorAll('.role-card');
-      return Array.from(roleCards).map(card => {
-        const id = card.id.replace('role_', '');
-        return {
-          title: card.querySelector(`[name="role_title_${id}"]`).value,
-          capacity: card.querySelector(`[name="role_capacity_${id}"]`).value,
-          skill: card.querySelector(`[name="role_skill_${id}"]`).value,
-          skillLevel: card.querySelector(`[name="role_skill_level_${id}"]`).value,
-          description: card.querySelector(`[name="role_description_${id}"]`).value
+      function collectRolesFromForm() {
+        const roleCards = document.querySelectorAll(".role-card");
+        return Array.from(roleCards).map((card) => {
+          const id = card.id.replace("role_", "");
+          return {
+            title: card.querySelector(`[name="role_title_${id}"]`).value,
+            capacity: card.querySelector(`[name="role_capacity_${id}"]`).value,
+            skill: card.querySelector(`[name="role_skill_${id}"]`).value,
+            skillLevel: card.querySelector(`[name="role_skill_level_${id}"]`)
+              .value,
+            description: card.querySelector(`[name="role_description_${id}"]`)
+              .value,
+          };
+        });
+      }
+
+      function submitProject() {
+        const data = {
+          title: document.getElementById("title").value,
+          shortDescription: document.getElementById("short_description").value,
+          fullDescription: document.getElementById("full_description").value,
+          duration: document.getElementById("duration").value,
+          ownerRole: document.getElementById("owner_no_technical_role").checked
+            ? null
+            : document.getElementById("owner_role").value,
+          roles: collectRolesFromForm(),
         };
-      });
-    }
 
-    function submitProject() {
-      const data = {
-        title: document.getElementById('title').value,
-        shortDescription: document.getElementById('short_description').value,
-        fullDescription: document.getElementById('full_description').value,
-        duration: document.getElementById('duration').value,
-        ownerRole: document.getElementById('owner_no_technical_role').checked ? null : document.getElementById('owner_role').value,
-        roles: collectRolesFromForm()
-      };
+        if (editId) {
+          updateProject(editId, data);
+        } else {
+          addProject(data);
+        }
+
+        // In Django: the form will POST directly to the server instead of redirecting here
+        window.location.href = "projects.html";
+      }
+
+      function loadForEdit() {
+        const project = getProject(editId);
+        if (!project) return;
+
+        document.getElementById("formTitle").innerText = "Edit Project";
+        document.getElementById("submitBtn").innerText = "Save Changes";
+
+        document.getElementById("title").value = project.title;
+        document.getElementById("short_description").value =
+          project.shortDescription;
+        document.getElementById("full_description").value =
+          project.fullDescription;
+        document.getElementById("duration").value = project.duration;
+
+        if (project.ownerRole) {
+          document.getElementById("owner_role").value = project.ownerRole;
+        } else {
+          document.getElementById("owner_no_technical_role").checked = true;
+          toggleOwnerRole();
+        }
+
+        project.roles.forEach((role) =>
+          addRole({
+            title: role.title,
+            capacity: role.capacity,
+            skill: role.skill,
+            skillLevel: role.skillLevel,
+            description: role.description,
+          }),
+        );
+      }
+
+      seedProjectsIfEmpty();
 
       if (editId) {
-        updateProject(editId, data);
+        loadForEdit();
       } else {
-        addProject(data);
+        addRole(); // one empty role by default when creating
       }
-
-      // In Django: the form will POST directly to the server instead of redirecting here
-      window.location.href = 'projects.html';
-    }
-
-    function loadForEdit() {
-      const project = getProject(editId);
-      if (!project) return;
-
-      document.getElementById('formTitle').innerText = 'Edit Project';
-      document.getElementById('submitBtn').innerText = 'Save Changes';
-
-      document.getElementById('title').value = project.title;
-      document.getElementById('short_description').value = project.shortDescription;
-      document.getElementById('full_description').value = project.fullDescription;
-      document.getElementById('duration').value = project.duration;
-
-      if (project.ownerRole) {
-        document.getElementById('owner_role').value = project.ownerRole;
-      } else {
-        document.getElementById('owner_no_technical_role').checked = true;
-        toggleOwnerRole();
-      }
-
-      project.roles.forEach(role => addRole({
-        title: role.title,
-        capacity: role.capacity,
-        skill: role.skill,
-        skillLevel: role.skillLevel,
-        description: role.description
-      }));
-    }
-
-    seedProjectsIfEmpty();
-
-    if (editId) {
-      loadForEdit();
-    } else {
-      addRole(); // one empty role by default when creating
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

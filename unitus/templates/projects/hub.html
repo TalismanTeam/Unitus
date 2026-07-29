@@ -10,16 +10,32 @@
 <body>
   <div class="container">
     <nav>
-      <a href="{% url 'home' %}">Home</a>
-      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'accounts:profile-page' %}" >Profile</a>  
+      <a href="{% url 'projects:home' %}"class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+
+      <!-- <a href="notification.html">Notifications</a>
       <a href="project_advertisements.html">Advertisements</a>
+<<<<<<< HEAD
       <a href="search.html">Search</a>
       <a href="matching.html">Matchmaking</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="chat.html">Chat</a>
       <a href="notification.html">Notifications</a>
       <a href="{% url 'accounts:profile-page' %}">Profile</a>
+=======
+      <a href="{% url 'home' %}">Home</a>
+>>>>>>> master
       <a href="settings.html">Settings</a>
+      <a href="matching.html">Matchmaking</a> -->
+
     </nav>
 
     <main>
