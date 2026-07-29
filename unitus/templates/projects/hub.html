@@ -13,7 +13,7 @@
       <a href="{% url 'accounts:profile-page' %}" >Profile</a>  
       <a href="{% url 'projects:home' %}"class="active">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
-      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
 
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">

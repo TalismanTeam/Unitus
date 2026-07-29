@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
@@ -39,6 +39,16 @@ def _parse_json_body(request):
 
 def _error(message, status=400):
     return JsonResponse({'error': message}, status=status)
+
+
+# ---------------------------------------------------------------------------
+# GET / — renders the ticket management page (templates/ticketManagement.html).
+# The JS on that page then calls the JSON endpoints below via fetch().
+# ---------------------------------------------------------------------------
+
+@login_required
+def ticket_management_view(request):
+    return render(request, 'ticketManagement.html')
 
 
 # ---------------------------------------------------------------------------
