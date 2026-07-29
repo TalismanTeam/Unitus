@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <title>Unitas - Create Project</title>
+    <title>Unitas - Edit {{ project.title }}</title>
 </head>
 <body>
   <div class="container">
@@ -14,7 +14,6 @@
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="ticketManagement.html">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
-
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
         {% csrf_token %}
         <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
@@ -22,13 +21,10 @@
     </nav>
 
     {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
-      </ul>
+      <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
     {% endif %}
 
-    <h2>Create New Project</h2>
-    <p class="hint">Step 1 of 2 — project basics. You'll add roles (and pick skills from our catalog) on the next page.</p>
+    <h2>Edit {{ project.title }}</h2>
 
     <form method="POST" novalidate>
       {% csrf_token %}
@@ -37,7 +33,7 @@
       {{ form.title }}
       {% if form.title.errors %}<p style="color:#ef4444;">{{ form.title.errors }}</p>{% endif %}
 
-      <label for="{{ form.short_description.id_for_label }}">Short description (shown on advertisements)</label>
+      <label for="{{ form.short_description.id_for_label }}">Short description</label>
       {{ form.short_description }}
       {% if form.short_description.errors %}<p style="color:#ef4444;">{{ form.short_description.errors }}</p>{% endif %}
 
@@ -50,7 +46,8 @@
       {% if form.duration_days.errors %}<p style="color:#ef4444;">{{ form.duration_days.errors }}</p>{% endif %}
 
       <hr>
-      <button type="submit">Create Project &amp; Continue</button>
+      <button type="submit">Save Changes</button>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
     </form>
   </div>
 </body>

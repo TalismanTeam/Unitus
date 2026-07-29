@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="{% static 'css/styles.css' %}"><title>Unitas - {{ job_ad.project_role.role_title }}</title></head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    <div class="page-header">
+      <h2>{{ job_ad.project_role.role_title }}</h2>
+      <span class="hint">{{ job_ad.get_status_display }}</span>
+    </div>
+
+    <div class="list-item">
+      <p><strong>Project (short description):</strong></p>
+      <p class="hint">{{ job_ad.project.short_description }}</p>
+
+      <p><strong>Role description:</strong></p>
+      <p class="hint">{{ job_ad.project_role.role_description }}</p>
+
+      <p><strong>Capacity:</strong> {{ job_ad.project_role.capacity }}</p>
+
+      <h4>Required skills</h4>
+      <ul>
+        {% for role_skill in job_ad.project_role.projectroleskill_set.all %}
+          <li>{{ role_skill.skill.name }} — {{ role_skill.get_min_required_level_display }}</li>
+        {% empty %}<li class="hint">No specific skills listed.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <p class="hint">Full project details are only visible to the project manager and approved members.</p>
+    <a href="{% url 'projects:browse' %}" class="secondary-btn">Back to search</a>
+  </div>
+</body>
+</html>

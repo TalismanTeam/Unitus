@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="{% static 'css/styles.css' %}"><title>Unitas - Change Status</title></head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <h2>{{ project.title }} — Change Status</h2>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<p style="color:#ef4444;">{{ form.non_field_errors }}</p>{% endif %}
+
+      <label for="{{ form.state.id_for_label }}">New status</label>
+      {{ form.state }}
+
+      <div id="terminationReasonBlock">
+        <label for="{{ form.termination_reason.id_for_label }}">Termination reason</label>
+        {{ form.termination_reason }}
+        {% if form.termination_reason.errors %}<p style="color:#ef4444;">{{ form.termination_reason.errors }}</p>{% endif %}
+      </div>
+
+      <p class="hint">Leaving "Recruiting" cancels all open job ads for this project.</p>
+
+      <button type="submit">Confirm</button>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
+    </form>
+  </div>
+
+  <script>
+    const stateSelect = document.getElementById('{{ form.state.id_for_label }}');
+    const block = document.getElementById('terminationReasonBlock');
+    function toggleBlock() {
+      block.style.display = stateSelect.value === 'TERMINATED' ? 'block' : 'none';
+    }
+    stateSelect.addEventListener('change', toggleBlock);
+    toggleBlock();
+  </script>
+</body>
+</html>

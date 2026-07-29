@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Unitas - Edit Role</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <h2>Edit Role — {{ project.title }}</h2>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      <label for="{{ role_form.role_title.id_for_label }}">Role title</label>
+      {{ role_form.role_title }}
+      {% if role_form.role_title.errors %}<p style="color:#ef4444;">{{ role_form.role_title.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.capacity.id_for_label }}">Capacity</label>
+      {{ role_form.capacity }}
+      {% if role_form.capacity.errors %}<p style="color:#ef4444;">{{ role_form.capacity.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.role_description.id_for_label }}">Role description</label>
+      {{ role_form.role_description }}
+      {% if role_form.role_description.errors %}<p style="color:#ef4444;">{{ role_form.role_description.errors }}</p>{% endif %}
+
+      <hr>
+      <h4>Required skills</h4>
+      {{ formset.management_form }}
+      <div id="skillFormsList">
+        {% for skill_form in formset %}
+          <div class="role-card">
+            {{ skill_form.id }}
+            <div class="skill-row">
+              {{ skill_form.skill }}
+              {{ skill_form.min_required_level }}
+              {% if skill_form.instance.pk %}
+                <label class="inline-check">{{ skill_form.DELETE }} Remove</label>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <hr>
+      <button type="submit">Save Changes</button>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import modelformset_factory
+from skills.models import Skill
 
 from .models import Project, ProjectRole, ProjectRoleSkill
 
@@ -38,10 +39,25 @@ class ProjectRoleForm(forms.ModelForm):
             raise forms.ValidationError('Capacity must be at least 1.')
         return capacity
 
+class ProjectRoleSkillForm(forms.ModelForm):
+    """Restricts skill choices to the pre-approved catalog (seed data from
+    skills/migrations/0002_seed_categories_and_skills.py). PM can't type an
+    arbitrary skill name here — only pick from what's already in the DB."""
+
+    class Meta:
+        model = ProjectRoleSkill
+        fields = ['skill', 'min_required_level']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['skill'].queryset = Skill.objects.filter(
+            is_approved=True
+        ).select_related('category').order_by('category__category_name', 'name')
+
 
 RoleSkillFormSet = modelformset_factory(
     ProjectRoleSkill,
-    fields=['skill', 'min_required_level'],
+    form=ProjectRoleSkillForm,
     extra=3,
     can_delete=True,
 )

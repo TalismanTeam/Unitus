@@ -11,11 +11,11 @@
 <div class="container">
 
         <nav>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>  
+      <a href="{% url 'accounts:profile-page' %}" >Profile</a>  
       <a href="{% url 'projects:home' %}">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="ticketManagement.html">Tickets</a>
-      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <a href="{% url 'chat:inbox' %}"class="active">Chat</a>
 
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
         {% csrf_token %}

@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="{% static 'css/styles.css' %}"><title>Unitas - Recommended Projects</title></head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    <div class="page-header"><h2>Recommended Projects</h2></div>
+
+    <form method="GET" style="display:flex; gap:10px; align-items:center;">
+      <select name="type">
+        <option value="jobads" {% if search_type == 'jobads' %}selected{% endif %}>Job Ads</option>
+        <option value="users" {% if search_type == 'users' %}selected{% endif %}>Users</option>
+      </select>
+      <input type="text" name="q" value="{{ query }}" placeholder="Search job ads or users..." style="flex:1;">
+      <button type="submit">Search</button>
+    </form>
+
+    {% if query %}
+      <h3 style="margin-top:20px;">Search results</h3>
+      {% if search_type == 'users' %}
+        {% for u in user_results %}
+          <div class="list-item"><p>{{ u.username }}{% if u.first_name %} — {{ u.first_name }} {{ u.last_name }}{% endif %}</p></div>
+        {% empty %}<p class="hint">No users found.</p>{% endfor %}
+      {% else %}
+        {% for ad in job_ad_results %}
+          <div class="list-item">
+            <h4>{{ ad.project_role.role_title }}</h4>
+            <p class="hint">{{ ad.project.short_description }}</p>
+            <a href="{% url 'projects:jobad_detail' ad.pk %}">View Advertisement</a>
+          </div>
+        {% empty %}<p class="hint">No open job ads found.</p>{% endfor %}
+      {% endif %}
+      <hr>
+    {% endif %}
+
+    <h3>Suggested for you</h3>
+    {% if suggestions %}
+      {% for ad in suggestions %}
+        <div class="list-item">
+          <h4>{{ ad.project_role.role_title }}</h4>
+          <p class="hint">{{ ad.project.short_description }}</p>
+          <a href="{% url 'projects:jobad_detail' ad.pk %}">View Advertisement</a>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="hint">
+        {% if request.user.is_authenticated %}No matching suggestions yet — add skills to your profile for better matches.
+        {% else %}Log in and add skills to your profile to see personalized suggestions.{% endif %}
+      </p>
+    {% endif %}
+  </div>
+</body>
+</html>
