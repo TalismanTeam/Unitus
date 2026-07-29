@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <title>Unitas - Ticket Management</title>
   <style>
     body {
@@ -55,16 +56,15 @@
 <body style="direction: ltr !important; text-align: left !important;">
   <div class="container" style="max-width: 1100px; direction: ltr !important;">
     <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="projects.html">Projects</a>
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'projects:home' %}">Projects</a>
       <a href="project_advertisements.html">Advertisements</a>
       <a href="search.html">Search</a>
       <a href="matching.html">Matchmaking</a>
-      <a href="ticketManagement.html" class="active">Tickets</a>
+      <a href="{% url 'collaboration:ticket-management' %}" class="active">Tickets</a>
       <a href="chat.html">Chat</a>
       <a href="notification.html">Notifications</a>
-      <a href="userprofile.html">Profile</a>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
       <a href="settings.html">Settings</a>
     </nav>
 
@@ -81,10 +81,10 @@
         <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
           <h3 style="margin-top: 0; color: var(--text); font-size: 16px; margin-bottom: 15px;">Inbox</h3>
           <div class="ticket-tabs">
-            <button class="ticket-tab active">📥 Received (Action Needed)</button>
-            <button class="ticket-tab">📤 Sent (Pending Review)</button>
-            <button class="ticket-tab">✅ Approved (Accepted)</button>
-            <button class="ticket-tab">🗄️ History (Closed / Rejected)</button>
+            <button class="ticket-tab active" data-tab="received">📥 Received (Action Needed)</button>
+            <button class="ticket-tab" data-tab="sent">📤 Sent (Pending Review)</button>
+            <button class="ticket-tab" data-tab="approved">✅ Approved (Accepted)</button>
+            <button class="ticket-tab" data-tab="history">🗄️ History (Closed / Rejected)</button>
           </div>
         </div>
       </aside>
@@ -94,11 +94,11 @@
           
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
             <h2 style="color: var(--text); font-size: 18px; margin: 0;">Ticket List</h2>
-            <select style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; width: auto;">
-              <option value="" disabled selected style="background: var(--surface);">Filter by Type</option>
-              <option style="background: var(--surface);">All Types</option>
-              <option style="background: var(--surface);">Collaboration Request (Application)</option>
-              <option style="background: var(--surface);">Invitation</option>
+            <select id="typeFilter" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; width: auto;">
+              <option value="" style="background: var(--surface);">All Types</option>
+              <option value="application" style="background: var(--surface);">Collaboration Request (Application)</option>
+              <option value="invitation" style="background: var(--surface);">Invitation</option>
+              <option value="resignation" style="background: var(--surface);">Resignation</option>
             </select>
           </div>
 
@@ -131,23 +131,19 @@
 
   <div id="reviewApplicationModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-top: 0; color: var(--text);">Review Application</h3>
+      <h3 style="margin-top: 0; color: var(--text);">Review Ticket</h3>
       <div style="margin-bottom: 20px;">
-        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Applicant:</strong> Unnamed</p>
-        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Requested Role:</strong> Unspecified</p>
+        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>From:</strong> <span id="reviewSenderName">—</span></p>
+        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Type:</strong> <span id="reviewTicketType">—</span></p>
+        <p style="color: var(--muted); font-size: 14px; margin: 0 0 10px 0;"><strong>Project / Role:</strong> <span id="reviewProjectRole">—</span></p>
         <div style="background: var(--bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-top: 15px;">
-          <p style="color: var(--text); font-size: 14px; margin: 0;">No message provided.</p>
+          <p id="reviewMessageText" style="color: var(--text); font-size: 14px; margin: 0;">No message provided.</p>
         </div>
-      </div>
-      
-      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1; font-size: 13px;">View Skills</button>
-        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1; font-size: 13px;">View Portfolio</button>
       </div>
 
       <div style="display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 20px;">
-        <button style="background: #22c55e; color: white; flex: 1;">Accept</button>
-        <button style="background: #ef4444; color: white; flex: 1;">Reject</button>
+        <button id="reviewAcceptBtn" style="background: #22c55e; color: white; flex: 1;">Accept</button>
+        <button id="reviewRejectBtn" style="background: #ef4444; color: white; flex: 1;">Reject</button>
         <button style="background: transparent; color: var(--muted); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('reviewApplicationModal').style.display='none'">Close</button>
       </div>
     </div>
@@ -159,7 +155,7 @@
       <p style="color: var(--text); font-size: 14px; margin-bottom: 25px;">Are you sure you want to withdraw this application? This action cannot be undone.</p>
       
       <div style="display: flex; gap: 10px;">
-        <button style="background: #ef4444; color: white; flex: 1;">Yes, Withdraw</button>
+        <button id="withdrawConfirmBtn" style="background: #ef4444; color: white; flex: 1;">Yes, Withdraw</button>
         <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="document.getElementById('withdrawModal').style.display='none'">Cancel</button>
       </div>
     </div>
@@ -174,6 +170,7 @@
       document.getElementById(modalId).style.display = 'none';
     }
   </script>
-  <script src="main.js"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/tickets.js' %}"></script>
 </body>
 </html>

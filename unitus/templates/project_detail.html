@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <script src="project_storage.js"></script>
+    <title>Unitas - Project Detail</title>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="projects.html" class="active">Projects</a>
+      <a href="project_advertisements.html">Advertisements</a>
+      <a href="search.html">Search</a>
+      <a href="matching.html">Matchmaking</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="chat.html">Chat</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <!-- PM-002: full project detail (only visible to approved members & the owner) -->
+    <div class="page-header">
+      <h2 id="projectTitle">Loading...</h2>
+      <span class="hint" id="projectStatus"></span>
+    </div>
+
+    <div class="list-item">
+      <p><strong>Full description:</strong></p>
+      <p id="projectFullDesc" class="hint"></p>
+
+      <p><strong>Estimated duration:</strong> <span id="projectDuration"></span></p>
+      <p><strong>Owner:</strong> <span id="projectOwner"></span></p>
+      <p id="ownerRoleLine"><strong>Owner's role:</strong> <span id="projectOwnerRole"></span></p>
+    </div>
+
+    <h3>Roles &amp; Members</h3>
+    <div id="rolesList"></div>
+
+    <!-- Owner-only actions -->
+    <div class="page-header" style="margin-top: 20px;">
+      <div class="project-actions">
+        <button type="button" id="editBtn">Edit Project</button>
+        <button type="button" onclick="openStatusModal()">Change Status</button>
+        <button type="button" class="secondary-btn" onclick="alert('Ownership transfer requires multi-step confirmation and a warning modal (per spec) — not yet implemented.')">Transfer Ownership</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Reused status modal -->
+  <div class="modal-overlay" id="statusModalOverlay">
+    <div class="modal-box">
+      <h3>Change Project Status</h3>
+
+      <label>New status</label>
+      <select id="newStatusSelect" onchange="toggleTerminationReason()">
+        <option value="recruiting">Recruiting</option>
+        <option value="in_progress">In Progress</option>
+        <option value="suspended">Suspended</option>
+        <option value="terminated">Terminated / Completed</option>
+      </select>
+
+      <div id="terminationReasonBlock" class="hidden">
+        <label>Termination reason</label>
+        <select id="terminationReasonSelect">
+          <option value="success">Successful completion</option>
+          <option value="internal_issues">Internal team issues</option>
+          <option value="team_failure">Team failure</option>
+          <option value="owner_withdrawal">Owner withdrawal</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <p class="hint">This action requires confirmation. Members will be notified of the status change.</p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" onclick="closeStatusModal()">Cancel</button>
+        <button type="button" onclick="confirmStatusChange()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('id');
+
+    function renderProject() {
+      const project = getProject(projectId);
+      if (!project) {
+        document.getElementById('projectTitle').innerText = 'Project not found';
+        return;
+      }
+
+      document.getElementById('projectTitle').innerText = project.title;
+      document.getElementById('projectStatus').innerText = STATUS_LABELS[project.status];
+      document.getElementById('projectFullDesc').innerText = project.fullDescription;
+      document.getElementById('projectDuration').innerText = project.duration;
+      document.getElementById('projectOwner').innerText = project.owner;
+
+      if (project.ownerRole) {
+        document.getElementById('projectOwnerRole').innerText = project.ownerRole;
+      } else {
+        document.getElementById('ownerRoleLine').innerText = "Owner has no technical role (management only).";
+      }
+
+      const rolesContainer = document.getElementById('rolesList');
+      rolesContainer.innerHTML = project.roles.map(role => `
+        <div class="list-item">
+          <p><strong>${role.title}</strong> (${role.filled}/${role.capacity} filled)</p>
+          <p class="hint">${role.description}</p>
+          <p><strong>Required skill:</strong> ${role.skill} — ${role.skillLevel}</p>
+          ${role.filled >= role.capacity
+            ? '<p class="hint">This role is fully staffed.</p>'
+            : '<p class="hint">No member assigned yet — an advertisement is currently active for this role.</p>'}
+        </div>
+      `).join('');
+
+      document.getElementById('editBtn').onclick = () => window.location.href = 'project_create.html?edit=' + project.id;
+    }
+
+    function openStatusModal() {
+      const project = getProject(projectId);
+      document.getElementById('newStatusSelect').value = project.status;
+      toggleTerminationReason();
+      document.getElementById('statusModalOverlay').classList.add('visible');
+    }
+    function closeStatusModal() {
+      document.getElementById('statusModalOverlay').classList.remove('visible');
+    }
+    function toggleTerminationReason() {
+      const isTerminated = document.getElementById('newStatusSelect').value === 'terminated';
+      document.getElementById('terminationReasonBlock').classList.toggle('hidden', !isTerminated);
+    }
+    function confirmStatusChange() {
+      const status = document.getElementById('newStatusSelect').value;
+      const reason = document.getElementById('terminationReasonSelect').value;
+      updateProjectStatus(projectId, status, reason);
+      closeStatusModal();
+      renderProject();
+    }
+
+    seedProjectsIfEmpty();
+    renderProject();
+  </script>
+
+</body>
+</html>
