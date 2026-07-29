@@ -400,31 +400,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
-  // 4. SEARCH & DISCOVERY MODULE
+  // 4. SEARCH & DISCOVERY MODULE              --------> moved to search.js
   // ==========================================
-  const searchResultsList = document.getElementById('searchResultsList');
-  if (searchResultsList) {
-    console.log("[Unitas] Search module initialized.");
-
-    // Handle Search Tabs Switching
-    const searchTabs = document.querySelectorAll('.search-tab');
-    searchTabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        searchTabs.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        // TODO: Change search context (Projects/Ads/Users)
-      });
-    });
-
-    // Handle category badges click
-    const categoryBadges = document.querySelectorAll('.category-badge');
-    categoryBadges.forEach(badge => {
-      badge.addEventListener('click', function() {
-        console.log("Filtering by category:", this.innerText);
-        // TODO: Trigger search by category
-      });
-    });
-  }
+ 
 
   // ==========================================
   // 5. NOTIFICATIONS MODULE

@@ -13,10 +13,10 @@
       <a href="{% url 'home' %}">Home</a>
       <a href="{% url 'projects:home' %}" class="active">Projects</a>
       <a href="project_advertisements.html">Advertisements</a>
-      <a href="search.html">Search</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
       <a href="matching.html">Matchmaking</a>
       <a href="ticketManagement.html">Tickets</a>
-      <a href="chat.html">Chat</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
       <a href="notification.html">Notifications</a>
       <a href="{% url 'accounts:profile-page' %}">Profile</a>
       <a href="settings.html">Settings</a>

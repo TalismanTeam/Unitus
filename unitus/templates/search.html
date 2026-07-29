@@ -1,137 +1,128 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Unitas - Search & Discovery</title>
-  <style>
-    body {
-      direction: ltr !important;
-      text-align: left !important;
-    }
-
-    nav {
-      direction: ltr !important;
-      display: flex;
-      justify-content: flex-start;
-      gap: 15px;
-    }
-
-    .search-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .search-tab { background: transparent; color: var(--muted); border: none; font-size: 16px; padding: 10px 15px; cursor: pointer; border-radius: 6px; transition: 0.3s; }
-    .search-tab.active { background: var(--surface-2); color: var(--accent); font-weight: bold; }
-    
-    .layout-grid { 
-      display: grid; 
-      grid-template-columns: 250px 1fr; 
-      gap: 25px; 
-      align-items: start; 
-      direction: ltr !important;
-    }
-    @media (max-width: 768px) { .layout-grid { grid-template-columns: 1fr; } }
-
-    .category-badge { background: var(--surface-2); color: var(--text); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; transition: 0.2s; display: inline-block; }
-    .category-badge:hover { border-color: var(--accent); color: var(--accent); }
-
-    input, select {
-      direction: ltr !important;
-      text-align: left !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/search.css' %}">
+    <title>Unitus - Search &amp; Discovery</title>
 </head>
-<body style="direction: ltr !important; text-align: left !important;">
-  <div class="container" style="max-width: 1000px; direction: ltr !important;">
+<body>
+<div class="container" style="max-width: 1000px;">
     <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="projects.html">Projects</a>
-      <a href="project_advertisements.html">Advertisements</a>
-      <a href="search.html" class="active">Search</a>
-      <a href="matching.html">Matchmaking</a>
-      <a href="ticketManagement.html">Tickets</a>
-      <a href="settings.html">Settings</a>
+        <a href="/">Home</a>
+        <a href="/dashboard/">Dashboard</a>
+        <a href="/projects/">Projects</a>
+        <a href="/search/" class="active">Search</a>
+        <a href="/recommendations/">Matchmaking</a>
+        <a href="/collaboration/">Tickets</a>
     </nav>
 
-    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
-      <div class="search-tabs">
-        <button class="search-tab active">📁 Projects</button>
-        <button class="search-tab">📄 Advertisements</button>
-        <button class="search-tab">👥 Users</button>
-      </div>
+    <div id="searchPageRoot">
 
-      <div style="display: flex; gap: 15px;">
-        <input type="text" placeholder="Enter a keyword, skill, or phrase..." style="margin: 0; flex: 1;">
-        <button>Search</button>
-        <button style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border);">⭐ Save Search</button>
-      </div>
+        <!-- =================== JOB ADS SEARCH =================== -->
+        <section class="search-module">
+            <div class="search-module-header">
+                <span class="search-module-icon">📄</span>
+                <h2>Search Job Ads</h2>
+            </div>
+
+            <div class="search-bar-row">
+                <input type="text" id="adsSearchInput" placeholder="Search by project, role, or keyword...">
+                <button type="button" class="filter-toggle-btn" id="adsFilterToggleBtn">Filters</button>
+            </div>
+
+            <div class="filter-panel" id="adsFilterPanel">
+                <div class="filter-field">
+                    <label>Skill</label>
+                    <select id="adsSkillSelect"></select>
+                </div>
+                <div class="filter-field">
+                    <label>Minimum required level</label>
+                    <select id="adsLevelSelect"><option value="">Any level</option></select>
+                </div>
+                <div class="filter-field">
+                    <label>Min duration (days)</label>
+                    <input type="number" id="adsDurationMin" min="0" placeholder="e.g. 30">
+                </div>
+                <div class="filter-field">
+                    <label>Max duration (days)</label>
+                    <input type="number" id="adsDurationMax" min="0" placeholder="e.g. 90">
+                </div>
+                <div class="filter-field">
+                    <label>Sort by</label>
+                    <select id="adsSortSelect">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" id="adsApplyBtn">Apply Filters</button>
+                    <button type="button" id="adsClearBtn" class="secondary-btn">Clear Filters</button>
+                </div>
+            </div>
+
+            <div class="category-chips" id="adsCategoryChips"></div>
+
+            <div class="result-grid" id="adsResultsGrid">
+                <div class="loading-state">Loading...</div>
+            </div>
+            <div class="pagination-controls" id="adsPagination"></div>
+        </section>
+
+        <!-- =================== USERS SEARCH =================== -->
+        <section class="search-module">
+            <div class="search-module-header">
+                <span class="search-module-icon">👥</span>
+                <h2>Search Users</h2>
+            </div>
+
+            <div class="search-bar-row">
+                <input type="text" id="usersSearchInput" placeholder="Search by name or username...">
+                <button type="button" class="filter-toggle-btn" id="usersFilterToggleBtn">Filters</button>
+            </div>
+
+            <div class="filter-panel" id="usersFilterPanel">
+                <div class="filter-field">
+                    <label>Skill</label>
+                    <select id="usersSkillSelect"></select>
+                </div>
+                <div class="filter-field">
+                    <label>Mastery level</label>
+                    <select id="usersLevelSelect"><option value="">Any level</option></select>
+                </div>
+                <div class="filter-field">
+                    <label>Location</label>
+                    <input type="text" id="usersLocationInput" placeholder="e.g. Tehran">
+                </div>
+                <div class="filter-field-check">
+                    <input type="checkbox" id="usersOpenToWorkCheckbox">
+                    <label for="usersOpenToWorkCheckbox">Open to work only</label>
+                </div>
+                <div class="filter-field">
+                    <label>Sort by</label>
+                    <select id="usersSortSelect">
+                        <option value="name_asc">Name A–Z</option>
+                        <option value="name_desc">Name Z–A</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" id="usersApplyBtn">Apply Filters</button>
+                    <button type="button" id="usersClearBtn" class="secondary-btn">Clear Filters</button>
+                </div>
+            </div>
+
+            <div class="category-chips" id="usersCategoryChips"></div>
+
+            <div class="result-grid" id="usersResultsGrid">
+                <div class="loading-state">Loading...</div>
+            </div>
+            <div class="pagination-controls" id="usersPagination"></div>
+        </section>
+
     </div>
-
-    <div class="layout-grid">
-      <aside>
-        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px;">
-          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">Sort By</h3>
-          <select style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
-            <option value="" disabled selected style="background: var(--surface);">Select sorting criteria</option>
-            <option style="background: var(--surface);">Most Relevant</option>
-            <option style="background: var(--surface);">Newest</option>
-            <option style="background: var(--surface);">Oldest</option>
-            <option style="background: var(--surface);">Most Popular</option>
-          </select>
-        </div>
-
-        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px;">
-          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">Filters</h3>
-          
-          <label style="display: block; color: var(--muted); font-size: 14px; margin-bottom: 5px;">Experience Level:</label>
-          <select style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); margin-bottom: 15px;">
-            <option value="" disabled selected style="background: var(--surface);">Select experience level</option>
-            <option style="background: var(--surface);">Beginner</option>
-            <option style="background: var(--surface);">Intermediate</option>
-            <option style="background: var(--surface);">Advanced</option>
-            <option style="background: var(--surface);">Expert / Master</option>
-          </select>
-
-          <div style="display: flex; gap: 10px; flex-direction: column;">
-            <button style="width: 100%;">Apply Filters</button>
-            <button style="background: transparent; color: #ef4444; border: 1px solid #ef4444; width: 100%;">Clear Filters</button>
-          </div>
-        </div>
-
-        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
-          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">Saved Searches</h3>
-          <div id="savedSearchesList" style="margin-bottom: 15px;">
-            <p style="color: var(--muted); font-size: 13px; margin: 0;">No saved searches yet.</p>
-          </div>
-
-          <h3 style="margin-top: 20px; color: var(--text); font-size: 16px;">Recent History</h3>
-          <div id="searchHistoryList">
-            <p style="color: var(--muted); font-size: 13px; margin: 0;">No search history found.</p>
-          </div>
-        </div>
-      </aside>
-
-      <main>
-        <div style="background: var(--surface); padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
-          <h3 style="margin-top: 0; color: var(--text); font-size: 16px;">Explore Categories</h3>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <span class="category-badge">Web Dev</span>
-            <span class="category-badge">Design</span>
-            <span class="category-badge">AI</span>
-            <span class="category-badge">Marketing</span>
-            <span class="category-badge">Data Science</span>
-          </div>
-        </div>
-
-        <h2 style="color: var(--text); font-size: 18px; margin-bottom: 15px;">Search Results</h2>
-
-        <div id="searchResultsList" style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); text-align: center;">
-          <p style="color: var(--muted); font-size: 14px; margin: 0;">No results to display. Try searching for a term.</p>
-        </div>
-
-      </main>
-    </div>
-  </div>
-  <script src="main.js"></script>
+</div>
+<script src="{% static 'js/search.js' %}"></script>
 </body>
 </html>
