@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const startChatBtn = document.getElementById('startChatBtn');
         if (isOwnProfile) {
           reportBtn.style.display = 'none';     // can't report yourself; backend blocks it too
-          startChatBtn.style.display = 'none';  // can't chat with yourself
+          if (startChatBtn) startChatBtn.style.display = 'none';  // element isn't rendered at all on own profile, but guard just in case
         } else {
           editBtn.style.display = 'none'; // no PATCH endpoint for anyone but yourself
         }
