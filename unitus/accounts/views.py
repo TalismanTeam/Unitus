@@ -14,8 +14,10 @@ from skills.choices import MasteryLevel
 from moderation.models import Report
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect
 
 from .forms import RegisterForm, LoginForm
@@ -41,10 +43,14 @@ PRIVACY_PATCHABLE_FIELDS = [
 # phone_number has no fixed country format in the model.
 PHONE_RE = re.compile(r"^\+?[0-9]{7,15}$")
 
+# Letters, digits, underscore, period, hyphen; 3-50 chars (matches the
+# model's max_length=50 on User.username).
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,50}$")
+
 MIN_BIRTH_YEAR = 1900
 
 ME_PATCHABLE_FIELDS = [
-    "first_name", "last_name", "gender", "birth_year",
+    "username", "first_name", "last_name", "gender", "birth_year",
     "phone_number", "location", "education_background", "about_me",
 ]
 
@@ -95,6 +101,17 @@ def me_view(request):
     if data is None:
         return bad_request("invalid JSON body")
 
+    if "username" in data:
+        username = (data["username"] or "").strip()
+        if not USERNAME_RE.match(username):
+            return bad_request(
+                "username must be 3-50 characters and contain only letters, "
+                "numbers, underscores, periods, or hyphens"
+            )
+        if User.objects.exclude(pk=user.pk).filter(username__iexact=username).exists():
+            return bad_request("That username is already taken.")
+        data["username"] = username
+
     if "gender" in data and data["gender"] not in User.Gender.values:
         return bad_request(f"gender must be one of {User.Gender.values}")
 
@@ -123,7 +140,9 @@ def me_view(request):
     try:
         user.save(update_fields=ME_PATCHABLE_FIELDS)
     except IntegrityError:
-        return bad_request("That phone number is already in use by another account.")
+        return bad_request(
+            "That username or phone number is already in use by another account."
+        )
 
     return JsonResponse(serialize_me(user))
 
@@ -278,6 +297,47 @@ def privacy_settings_view(request):
 
     settings_obj.save(update_fields=PRIVACY_PATCHABLE_FIELDS)
     return JsonResponse(serialize_privacy_settings(settings_obj))
+
+
+# ---------------------------------------------------------------------------
+# PATCH /users/me/password
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["PATCH"])
+def change_password_view(request):
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    if not old_password or not new_password or not confirm_password:
+        return bad_request("old_password, new_password and confirm_password are required")
+
+    if not request.user.check_password(old_password):
+        return bad_request("Old password is incorrect.")
+
+    if new_password != confirm_password:
+        return bad_request("New password and confirmation do not match.")
+
+    if new_password == old_password:
+        return bad_request("New password must be different from the old password.")
+
+    try:
+        validate_password(new_password, user=request.user)
+    except DjangoValidationError as e:
+        return bad_request(" ".join(e.messages))
+
+    request.user.set_password(new_password)
+    request.user.save(update_fields=["password"])
+    # Without this, changing the password invalidates the session hash and
+    # immediately logs the user out of their own request.
+    update_session_auth_hash(request, request.user)
+
+    return JsonResponse({"detail": "Password updated successfully."})
 
 
 # ---------------------------------------------------------------------------

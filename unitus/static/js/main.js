@@ -56,6 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
       function populateHeader(data) {
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username;
         document.getElementById('viewName').textContent = name;
+        // username is always present (serialize_me and serialize_public_profile
+        // both include it unconditionally — it's not gated by privacy settings).
+        document.getElementById('viewUsername').textContent = data.username ? `@${data.username}` : '';
         document.getElementById('viewBio').textContent = data.about_me || 'User biography goes here...';
         document.getElementById('viewLocation').textContent = data.location
           ? `📍 ${data.location}`
@@ -312,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ---- Prefill form from the logged-in user's own data --------------------
       function prefillEditForm(data) {
+        document.getElementById('usernameInput').value = data.username || '';
         document.getElementById('firstNameInput').value = data.first_name || '';
         document.getElementById('lastNameInput').value = data.last_name || '';
         document.getElementById('bioInput').value = data.about_me || '';
@@ -350,16 +354,32 @@ document.addEventListener("DOMContentLoaded", () => {
       // person gets instant feedback instead of a round trip for something
       // we can already tell is wrong.
       const PHONE_RE = /^\+?[0-9]{7,15}$/;
+      const USERNAME_RE = /^[A-Za-z0-9_.-]{3,50}$/;
 
       function validateEditForm() {
+        const usernameEl = document.getElementById('usernameInput');
+        const usernameError = document.getElementById('usernameError');
         const birthYearEl = document.getElementById('birthYearInput');
         const birthYearError = document.getElementById('birthYearError');
         const phoneEl = document.getElementById('phoneNumberInput');
         const phoneError = document.getElementById('phoneNumberError');
         let valid = true;
 
+        usernameError.style.display = 'none';
         birthYearError.style.display = 'none';
         phoneError.style.display = 'none';
+
+        const usernameRaw = usernameEl.value.trim();
+        if (!usernameRaw) {
+          usernameError.textContent = 'Username is required.';
+          usernameError.style.display = '';
+          valid = false;
+        } else if (!USERNAME_RE.test(usernameRaw)) {
+          usernameError.textContent =
+            'Username must be 3-50 characters: letters, numbers, underscores, periods, or hyphens only.';
+          usernameError.style.display = '';
+          valid = false;
+        }
 
         const birthYearRaw = birthYearEl.value.trim();
         if (birthYearRaw) {
@@ -399,6 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const phoneRaw = document.getElementById('phoneNumberInput').value.trim();
 
         const body = {
+          username: document.getElementById('usernameInput').value.trim(),
           first_name: document.getElementById('firstNameInput').value,
           last_name: document.getElementById('lastNameInput').value,
           about_me: document.getElementById('bioInput').value,
@@ -460,6 +481,62 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // ---- Change password ---------------------------------------------------
+      async function handlePasswordChange(event) {
+        event.preventDefault();
+
+        const oldPasswordEl = document.getElementById('oldPasswordInput');
+        const newPasswordEl = document.getElementById('newPasswordInput');
+        const confirmPasswordEl = document.getElementById('confirmPasswordInput');
+        const passwordError = document.getElementById('passwordError');
+        const statusEl = document.getElementById('changePasswordStatus');
+
+        passwordError.style.display = 'none';
+        statusEl.textContent = '';
+
+        const oldPassword = oldPasswordEl.value;
+        const newPassword = newPasswordEl.value;
+        const confirmPassword = confirmPasswordEl.value;
+
+        if (!oldPassword || !newPassword || !confirmPassword) {
+          passwordError.textContent = 'Fill in all three password fields.';
+          passwordError.style.display = '';
+          return;
+        }
+        if (newPassword !== confirmPassword) {
+          passwordError.textContent = 'New password and repeat password do not match.';
+          passwordError.style.display = '';
+          return;
+        }
+        if (newPassword === oldPassword) {
+          passwordError.textContent = 'New password must be different from the old password.';
+          passwordError.style.display = '';
+          return;
+        }
+
+        statusEl.textContent = 'Saving...';
+        statusEl.style.color = 'var(--muted)';
+
+        try {
+          await apiFetch('/users/me/password', {
+            method: 'PATCH',
+            body: JSON.stringify({
+              old_password: oldPassword,
+              new_password: newPassword,
+              confirm_password: confirmPassword,
+            }),
+          });
+          statusEl.textContent = 'Password updated.';
+          statusEl.style.color = '#22c55e';
+          oldPasswordEl.value = '';
+          newPasswordEl.value = '';
+          confirmPasswordEl.value = '';
+        } catch (e) {
+          statusEl.textContent = e.message;
+          statusEl.style.color = '#ef4444';
+        }
+      }
+
       // ---- Skill picker wiring --------------------------------------------
       function setupSkillPicker() {
         const categorySelect = document.getElementById('skillCategorySelect');
@@ -482,6 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setupSkillPicker();
       document.getElementById('addSkillBtn').addEventListener('click', handleAddSkill);
       document.getElementById('editProfileForm').addEventListener('submit', handleProfileSave);
+      document.getElementById('changePasswordForm').addEventListener('submit', handlePasswordChange);
     }
   }
 

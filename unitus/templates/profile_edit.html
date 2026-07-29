@@ -60,6 +60,10 @@
           <span style="color: var(--muted); font-size: 13px;">Loading avatar options...</span>
         </div>
 
+        <label style="font-weight: bold; color: var(--text);">Username:</label>
+        <input type="text" id="usernameInput" placeholder="Enter a username...">
+        <p id="usernameError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
         <label style="font-weight: bold; color: var(--text);">First Name:</label>
         <input type="text" id="firstNameInput" placeholder="Enter your first name...">
 
@@ -174,6 +178,25 @@
 
         <button type="submit" style="margin-top: 15px; width: 100%;">Save Changes</button>
         <p id="editProfileStatus" style="font-size: 13px; margin-top: 8px;"></p>
+      </form>
+    </div>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 25px;">
+      <h2 style="margin: 0 0 10px; color: var(--text);">Change Password</h2>
+
+      <form id="changePasswordForm">
+        <label style="font-weight: bold; color: var(--text);">Old Password:</label>
+        <input type="password" id="oldPasswordInput" placeholder="Enter your current password" autocomplete="current-password">
+
+        <label style="font-weight: bold; color: var(--text);">New Password:</label>
+        <input type="password" id="newPasswordInput" placeholder="Enter a new password" autocomplete="new-password">
+
+        <label style="font-weight: bold; color: var(--text);">Repeat New Password:</label>
+        <input type="password" id="confirmPasswordInput" placeholder="Re-enter the new password" autocomplete="new-password">
+        <p id="passwordError" style="color: #ef4444; font-size: 12px; margin: 4px 0 0; display: none;"></p>
+
+        <button type="submit" style="margin-top: 15px; width: 100%;">Change Password</button>
+        <p id="changePasswordStatus" style="font-size: 13px; margin-top: 8px;"></p>
       </form>
     </div>
   </div>

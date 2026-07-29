@@ -14,6 +14,10 @@ urlpatterns = [
     path("users/me/work-preferences", views.work_preferences_view, name="work-preferences"),
     path("users/me/privacy-settings", views.privacy_settings_view, name="privacy-settings"),
     path("users/me/dashboard/projects", views.dashboard_projects_view, name="dashboard-projects"),
+    # New: PATCH /users/me/password — change the logged-in user's password
+    # (old_password / new_password / confirm_password). See
+    # views.change_password_view.
+    path("users/me/password", views.change_password_view, name="change-password"),
     path("users/<int:id>", views.public_profile_view, name="public-profile"),
     path("users/<int:id>/active-projects-count", views.active_projects_count_view, name="active-projects-count"),
     path("users/<int:id>/report", views.report_user_view, name="report-user"),
