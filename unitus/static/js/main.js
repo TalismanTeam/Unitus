@@ -61,6 +61,28 @@ document.addEventListener("DOMContentLoaded", () => {
           ? `📍 ${data.location}`
           : '📍 Location not set';
 
+        // Each of these is only present in the API response when either it's
+        // your own profile (serialize_me) or the profile owner's privacy
+        // settings allow it (serialize_public_profile gates it to null
+        // otherwise) — so a null/undefined value means "don't show this
+        // row" rather than an error.
+        const GENDER_LABELS = { MALE: 'Male', FEMALE: 'Female', OTHER: 'Other', NOT_SPECIFIED: 'Not Specified' };
+        function setOptionalRow(elementId, value, formatter) {
+          const el = document.getElementById(elementId);
+          if (value === null || value === undefined || value === '') {
+            el.style.display = 'none';
+            el.textContent = '';
+          } else {
+            el.style.display = '';
+            el.textContent = formatter(value);
+          }
+        }
+        setOptionalRow('viewGender', data.gender, (v) => `Gender: ${GENDER_LABELS[v] || v}`);
+        setOptionalRow('viewBirthYear', data.birth_year, (v) => `Birth Year: ${v}`);
+        setOptionalRow('viewPhone', data.phone_number, (v) => `📞 ${v}`);
+        setOptionalRow('viewEmail', data.email, (v) => `✉️ ${v}`);
+        setOptionalRow('viewEducation', data.education_background, (v) => `🎓 ${v}`);
+
         const statusEl = document.getElementById('viewStatus');
         statusEl.textContent = data.is_open_to_work ? '🟢 Open to Work' : '⚪ Not Available';
 
@@ -294,35 +316,121 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('lastNameInput').value = data.last_name || '';
         document.getElementById('bioInput').value = data.about_me || '';
         document.getElementById('locationInput').value = data.location || '';
+        document.getElementById('genderInput').value = data.gender || 'NOT_SPECIFIED';
+        document.getElementById('birthYearInput').value = data.birth_year || '';
+        document.getElementById('phoneNumberInput').value = data.phone_number || '';
+        document.getElementById('educationInput').value = data.education_background || '';
         document.getElementById('openToWorkCheckbox').checked = !!data.is_open_to_work;
         currentAvatarId = data.avatar ? data.avatar.id : null;
         selectedAvatarId = currentAvatarId;
+      }
+
+      function prefillPrivacyForm(privacy) {
+        document.getElementById('showGenderCheckbox').checked = !!(privacy && privacy.show_gender);
+        document.getElementById('showBirthYearCheckbox').checked = !!(privacy && privacy.show_birth_year);
+        document.getElementById('showPhoneCheckbox').checked = !!(privacy && privacy.show_phone);
+        document.getElementById('showEmailCheckbox').checked = !!(privacy && privacy.show_email);
+        document.getElementById('showLocationCheckbox').checked = !!(privacy && privacy.show_location);
+        document.getElementById('showEducationCheckbox').checked = !!(privacy && privacy.show_education_background);
       }
 
       async function loadOwnProfile() {
         try {
           const data = await apiFetch('/users/me');
           prefillEditForm(data);
+          // serialize_me already embeds privacy_settings, so this doesn't
+          // need a second round trip to /users/me/privacy-settings.
+          prefillPrivacyForm(data.privacy_settings);
         } catch (e) {
           console.error('Could not load profile for editing', e);
         }
       }
 
+      // Mirrors the server-side checks in accounts.views.me_view so the
+      // person gets instant feedback instead of a round trip for something
+      // we can already tell is wrong.
+      const PHONE_RE = /^\+?[0-9]{7,15}$/;
+
+      function validateEditForm() {
+        const birthYearEl = document.getElementById('birthYearInput');
+        const birthYearError = document.getElementById('birthYearError');
+        const phoneEl = document.getElementById('phoneNumberInput');
+        const phoneError = document.getElementById('phoneNumberError');
+        let valid = true;
+
+        birthYearError.style.display = 'none';
+        phoneError.style.display = 'none';
+
+        const birthYearRaw = birthYearEl.value.trim();
+        if (birthYearRaw) {
+          const year = Number(birthYearRaw);
+          const currentYear = new Date().getFullYear();
+          if (!Number.isInteger(year) || year < 1900 || year > currentYear) {
+            birthYearError.textContent = `Enter a birth year between 1900 and ${currentYear}.`;
+            birthYearError.style.display = '';
+            valid = false;
+          }
+        }
+
+        const phoneRaw = phoneEl.value.trim();
+        if (phoneRaw && !PHONE_RE.test(phoneRaw)) {
+          phoneError.textContent = "Enter 7-15 digits, optionally starting with '+'.";
+          phoneError.style.display = '';
+          valid = false;
+        }
+
+        return valid;
+      }
+
       async function handleProfileSave(event) {
         event.preventDefault();
         const statusEl = document.getElementById('editProfileStatus');
+
+        if (!validateEditForm()) {
+          statusEl.textContent = 'Please fix the highlighted fields.';
+          statusEl.style.color = '#ef4444';
+          return;
+        }
+
         statusEl.textContent = 'Saving...';
         statusEl.style.color = 'var(--muted)';
+
+        const birthYearRaw = document.getElementById('birthYearInput').value.trim();
+        const phoneRaw = document.getElementById('phoneNumberInput').value.trim();
 
         const body = {
           first_name: document.getElementById('firstNameInput').value,
           last_name: document.getElementById('lastNameInput').value,
           about_me: document.getElementById('bioInput').value,
           location: document.getElementById('locationInput').value,
+          gender: document.getElementById('genderInput').value,
+          phone_number: phoneRaw || null,
+          education_background: document.getElementById('educationInput').value,
+        };
+        // birth_year is required (non-nullable) on the model, so only send
+        // it when the field actually has a value — leaving it out of the
+        // PATCH body keeps whatever's already saved instead of trying (and
+        // failing at the DB level) to null it out.
+        if (birthYearRaw) {
+          body.birth_year = Number(birthYearRaw);
+        }
+
+        const privacyBody = {
+          show_gender: document.getElementById('showGenderCheckbox').checked,
+          show_birth_year: document.getElementById('showBirthYearCheckbox').checked,
+          show_phone: document.getElementById('showPhoneCheckbox').checked,
+          show_email: document.getElementById('showEmailCheckbox').checked,
+          show_location: document.getElementById('showLocationCheckbox').checked,
+          show_education_background: document.getElementById('showEducationCheckbox').checked,
         };
 
         try {
           await apiFetch('/users/me', { method: 'PATCH', body: JSON.stringify(body) });
+
+          await apiFetch('/users/me/privacy-settings', {
+            method: 'PATCH',
+            body: JSON.stringify(privacyBody),
+          });
 
           const openToWork = document.getElementById('openToWorkCheckbox').checked;
           await apiFetch('/users/me/open-to-work', {

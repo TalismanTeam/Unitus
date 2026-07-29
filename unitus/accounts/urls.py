@@ -12,6 +12,7 @@ urlpatterns = [
     path("users/me/skills", views.my_skills_view, name="my-skills"),
     path("users/me/skills/<int:skill_id>", views.my_skill_detail_view, name="my-skill-detail"),
     path("users/me/work-preferences", views.work_preferences_view, name="work-preferences"),
+    path("users/me/privacy-settings", views.privacy_settings_view, name="privacy-settings"),
     path("users/me/dashboard/projects", views.dashboard_projects_view, name="dashboard-projects"),
     path("users/<int:id>", views.public_profile_view, name="public-profile"),
     path("users/<int:id>/active-projects-count", views.active_projects_count_view, name="active-projects-count"),
