@@ -418,4 +418,14 @@ def profile_page_view(request, id=None):
     /auth/users/<id>.
     """
     return render(request, 'userprofile.html', {'profile_id': id})
- 
+
+
+@login_required
+def profile_edit_view(request):
+    """
+    /auth/profile/edit/ -> renders the standalone "Edit Profile" page for the
+    logged-in user. There's no id param here on purpose: editing someone
+    else's profile isn't possible (no PATCH endpoint exists for anyone but
+    request.user), so this page only ever edits your own profile.
+    """
+    return render(request, 'profile_edit.html')

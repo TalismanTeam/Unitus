@@ -21,5 +21,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('profile/', views.profile_page_view, name='profile-page'),
+    path('profile/edit/', views.profile_edit_view, name='profile-edit'),
     path('profile/<int:id>/', views.profile_page_view, name='profile-page-detail'),
 ]
