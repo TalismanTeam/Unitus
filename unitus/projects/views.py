@@ -23,24 +23,10 @@ from .services import sync_job_ad_status_for_role
 
 @login_required
 def projects_hub(request):
-    """
-    New landing page for the "Projects" nav link: just 3 buttons that
-    route to the pages that already exist elsewhere.
-      - My Projects        -> accounts:my-projects (the old dashboard.html)
-      - Create a Project   -> projects:project_create
-      - Recommended Projects -> projects:browse (the old views.home)
-    """
     return render(request, 'projects/hub.html')
 
 
 def browse(request):
-    """
-    Was `home` at /projects/ (name='home'). Unchanged logic — job-ad /
-    user search plus skill-matched suggestions — just moved to
-    /projects/browse/ (name='browse') and used as the destination for the
-    hub's "Recommended Projects" button.
-    """
-
     query = request.GET.get('q', '').strip()
     search_type = request.GET.get('type', 'jobads')
 
@@ -80,14 +66,12 @@ def browse(request):
 
 
 def jobad_detail(request, pk):
-
     job_ad = get_object_or_404(JobAd.objects.select_related('project', 'project_role'), pk=pk)
     return render(request, 'projects/jobad_detail.html', {'job_ad': job_ad})
 
 
 @login_required
 def project_create(request):
-
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
@@ -108,23 +92,44 @@ def project_add_role(request, pk):
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can add roles.')
 
+    pm_membership, _ = ProjectMember.objects.get_or_create(
+        project=project, user=project.pm,
+        defaults={'member_status': ProjectMember.MemberStatus.ACTIVE},
+    )
+    pm_already_has_role = pm_membership.project_role_id is not None
+
     role_form = ProjectRoleForm(request.POST or None)
     formset = RoleSkillFormSet(request.POST or None, queryset=RoleSkillFormSet.model.objects.none())
 
     if request.method == 'POST' and role_form.is_valid() and formset.is_valid():
-        role = role_form.save(commit=False)
-        role.project = project
-        role.save()
+        wants_owner_role = role_form.cleaned_data.get('is_owner_role', False)
 
-        for skill_form in formset:
-            if skill_form.cleaned_data and not skill_form.cleaned_data.get('DELETE'):
-                role_skill = skill_form.save(commit=False)
-                role_skill.role = role
-                role_skill.save()
+        if wants_owner_role and pm_already_has_role:
+            role_form.add_error(
+                None, 'You already have a role on this project. Remove it first if you want to reassign yourself.'
+            )
+        else:
+            role = role_form.save(commit=False)
+            role.project = project
+            role.save()
 
-        JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
-        messages.success(request, f'Role "{role.role_title}" added and job ad published.')
-        return redirect('projects:project_workspace', pk=project.pk)
+            for skill_form in formset:
+                if skill_form.cleaned_data and not skill_form.cleaned_data.get('DELETE'):
+                    role_skill = skill_form.save(commit=False)
+                    role_skill.role = role
+                    role_skill.save()
+
+            JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
+
+            if wants_owner_role:
+                pm_membership.project_role = role
+                pm_membership.save(update_fields=['project_role'])
+                sync_job_ad_status_for_role(role)
+                messages.success(request, f'Role "{role.role_title}" added and assigned to you.')
+            else:
+                messages.success(request, f'Role "{role.role_title}" added and job ad published.')
+
+            return redirect('projects:project_add_role', pk=project.pk)
 
     existing_roles = project.projectrole_set.select_related('jobad').all()
     return render(request, 'projects/project_add_role.html', {
@@ -132,18 +137,16 @@ def project_add_role(request, pk):
         'role_form': role_form,
         'formset': formset,
         'existing_roles': existing_roles,
+        'pm_already_has_role': pm_already_has_role,
     })
 
 
 @login_required
 def project_workspace(request, pk):
-
     project = get_object_or_404(Project, pk=pk)
     if not can_view_workspace(request.user, project):
         raise PermissionDenied("You don't have access to this project's workspace.")
 
-    # filled_count: active ProjectMember rows currently on that role, so the
-    # template can show "X/Y filled" without doing its own DB queries.
     roles = project.projectrole_set.prefetch_related(
         'projectroleskill_set__skill'
     ).annotate(
@@ -157,9 +160,6 @@ def project_workspace(request, pk):
         member_status=ProjectMember.MemberStatus.ACTIVE
     ).select_related('user', 'project_role')
 
-    # The PM is enrolled as a ProjectMember too (see signals.py), but may or
-    # may not have a technical ProjectRole assigned — surface that
-    # separately since the workspace page shows it next to "Owner".
     owner_membership = next(
         (m for m in members if m.user_id == project.pm_id), None
     )
@@ -181,7 +181,6 @@ def project_workspace(request, pk):
 
 @login_required
 def project_state_change(request, pk):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can change project state.')
@@ -204,7 +203,6 @@ def project_state_change(request, pk):
 
 @login_required
 def project_remove_member(request, pk, member_id):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can remove members.')
@@ -226,7 +224,6 @@ def project_remove_member(request, pk, member_id):
 
 @login_required
 def project_transfer_ownership(request, pk):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the current project manager can transfer ownership.')
@@ -263,7 +260,6 @@ def project_transfer_ownership(request, pk):
 
 @login_required
 def project_edit(request, pk):
-    """PM edits basic project details (SRS 3.4)."""
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can edit the project details.')
@@ -282,7 +278,6 @@ def project_edit(request, pk):
 
 @login_required
 def project_delete(request, pk):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can delete this project.')
@@ -297,7 +292,6 @@ def project_delete(request, pk):
 
 @login_required
 def project_edit_role(request, pk, role_id):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can edit roles.')
@@ -332,7 +326,6 @@ def project_edit_role(request, pk, role_id):
 
 @login_required
 def project_delete_role(request, pk, role_id):
-
     project = get_object_or_404(Project, pk=pk)
     if not is_project_pm(request.user, project):
         raise PermissionDenied('Only the project manager can delete roles.')
@@ -350,7 +343,6 @@ def project_delete_role(request, pk, role_id):
 
 @login_required
 def project_resign(request, pk):
-
     project = get_object_or_404(Project, pk=pk)
 
     if is_project_pm(request.user, project):

@@ -1,224 +1,151 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
     <title>Unitas - {{ project.title }}</title>
 </head>
-
 <body>
-
   <div class="container">
-
     <nav>
-      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>  
       <a href="{% url 'projects:home' %}" class="active">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
-
-      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; margin-left: auto;">
         {% csrf_token %}
         <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
       </form>
-
-      <!-- <a href="notification.html">Notifications</a>
-      <a href="project_advertisements.html">Advertisements</a>
-      <a href="{% url 'home' %}">Home</a>
-      <a href="settings.html">Settings</a>
-      <a href="matching.html">Matchmaking</a> -->
-
     </nav>
 
     {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}
-          <li class="{{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
+      <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
     {% endif %}
 
-    <!-- Full project detail — only reachable by the PM & active members;
-         enforced server-side by can_view_workspace() in project_workspace view -->
+    
+    <div class="page-header" style="align-items: center;">
+      <h2 id="projectTitle" style="margin: 0;">{{ project.title }}</h2>
+      <span class="badge badge-outline" id="projectStatus">{{ project.get_state_display }}</span>
+    </div>
+
+    
+    <div class="modern-card">
+      <p id="projectFullDesc" style="margin-top: 0; color: var(--text);">{{ project.full_description }}</p>
+      <hr>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Duration</span>
+          <span class="info-value" id="projectDuration">{{ project.duration_days }} days</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Owner</span>
+          <span class="info-value" id="projectOwner">{{ project.pm.username }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Owner's Role</span>
+          <span class="info-value" id="projectOwnerRole">
+            {% if owner_role_title %}{{ owner_role_title }}{% else %}Management Only{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    
     <div class="page-header">
-      <h2 id="projectTitle">{{ project.title }}</h2>
-      <span class="hint" id="projectStatus">{{ project.get_state_display }}</span>
+      <h3 style="margin: 0;">Roles &amp; Capacity</h3>
+      {% if is_pm %}
+        <button type="button" class="secondary-btn" style="padding: 6px 14px;" onclick="window.location.href='{% url 'projects:project_add_role' project.pk %}';">+ Add Role</button>
+      {% endif %}
     </div>
 
-    <div class="list-item">
-      <p><strong>Full description:</strong></p>
-      <p id="projectFullDesc" class="hint">{{ project.full_description }}</p>
-
-      <p><strong>Estimated duration:</strong> <span id="projectDuration">{{ project.duration_days }} days</span></p>
-      <p><strong>Owner:</strong> <span id="projectOwner">{{ project.pm.username }}</span></p>
-      <p id="ownerRoleLine">
-        <strong>Owner's role:</strong>
-        <span id="projectOwnerRole">
-          {% if owner_role_title %}{{ owner_role_title }}{% else %}Owner has no technical role (management only).{% endif %}
-        </span>
-      </p>
-    </div>
-
-    <h3>Roles &amp; Members</h3>
     <div id="rolesList">
       {% for role in roles %}
-        <div class="list-item">
-          <p><strong>{{ role.role_title }}</strong> ({{ role.filled_count }}/{{ role.capacity }} filled)</p>
-          <p class="hint">{{ role.role_description }}</p>
-          <ul>
+        <div class="modern-card" style="padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+              <h4 style="margin: 0; font-size: 18px;">{{ role.role_title }}</h4>
+              <p class="hint" style="margin-top: 4px;">{{ role.role_description }}</p>
+            </div>
+            <span class="badge badge-filled">{{ role.filled_count }} / {{ role.capacity }} Filled</span>
+          </div>
+          
+          <ul class="skill-tags">
             {% for role_skill in role.projectroleskill_set.all %}
-              <li>{{ role_skill.skill.name }} — {{ role_skill.get_min_required_level_display }}</li>
+              <li>{{ role_skill.skill.name }} <span>{{ role_skill.get_min_required_level_display }}</span></li>
             {% endfor %}
           </ul>
-          {% if role.filled_count >= role.capacity %}
-            <p class="hint">This role is fully staffed.</p>
-          {% elif role.jobad and role.jobad.status == 'OPEN' %}
-            <p class="hint">No member assigned yet — an advertisement is currently active for this role.</p>
-          {% endif %}
+
+          <div style="margin-top: 15px; font-size: 13px;">
+            {% if role.filled_count >= role.capacity %}
+              <span style="color: #10b981;">&#10003; Fully staffed</span>
+            {% elif role.jobad and role.jobad.status == 'OPEN' %}
+              <span style="color: var(--accent);">Active advertisement is open for this role.</span>
+            {% endif %}
+          </div>
 
           {% if is_pm %}
-            <div class="project-actions">
-              <a href="{% url 'projects:project_edit_role' project.pk role.pk %}">Edit Role</a>
-              <button type="button" class="remove-btn"
-                      data-delete-role-url="{% url 'projects:project_delete_role' project.pk role.pk %}"
-                      data-role-title="{{ role.role_title }}"
-                      onclick="openDeleteRoleModal(this)">Delete Role</button>
+            <div class="project-actions" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+              <a href="{% url 'projects:project_edit_role' project.pk role.pk %}" class="secondary-btn" style="text-decoration: none; padding: 6px 12px; border-radius: 6px;">Edit Role</a>
+              <a href="{% url 'projects:project_delete_role' project.pk role.pk %}" class="remove-btn" style="text-decoration: none; padding: 6px 12px; border-radius: 6px;">Delete</a>
             </div>
           {% endif %}
         </div>
       {% empty %}
-        <p class="hint">No roles have been defined for this project yet.</p>
+        <div class="modern-card" style="text-align: center; color: var(--muted);">No roles defined yet.</div>
       {% endfor %}
     </div>
 
-    <h3>Active Members</h3>
-    <ul>
+    
+    <h3 style="margin-top: 30px;">Active Members</h3>
+    <ul class="member-list">
       {% for member in members %}
-        <li>
-          {{ member.user.username }}
-          {% if member.user_id == project.pm_id %}
-            (Project Manager{% if member.project_role %} &amp; {{ member.project_role.role_title }}{% endif %})
-          {% elif member.project_role %}
-            — {{ member.project_role.role_title }}
-          {% else %}
-            — role not assigned
-          {% endif %}
-
+        <li class="member-item">
+          <div class="member-info">
+            <div style="width: 40px; height: 40px; background: var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text);">
+              {{ member.user.username|make_list|first|upper }}
+            </div>
+            <div>
+              <div class="member-name">{{ member.user.username }}</div>
+              <div class="member-role">
+                {% if member.user_id == project.pm_id %}
+                  Project Manager {% if member.project_role %}&bull; {{ member.project_role.role_title }}{% endif %}
+                {% elif member.project_role %}
+                  {{ member.project_role.role_title }}
+                {% else %}
+                  Unassigned Role
+                {% endif %}
+              </div>
+            </div>
+          </div>
           {% if is_pm and member.user_id != project.pm_id %}
-            <button type="button" class="remove-btn"
-                    data-remove-member-url="{% url 'projects:project_remove_member' project.pk member.pk %}"
-                    data-member-name="{{ member.user.username }}"
-                    onclick="openRemoveMemberModal(this)">Remove</button>
+            <a href="{% url 'projects:project_remove_member' project.pk member.pk %}" class="remove-btn" style="text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13px;">Remove</a>
           {% endif %}
         </li>
       {% empty %}
-        <li class="hint">No active members yet.</li>
+        <li class="member-item" style="justify-content: center; color: var(--muted);">No active members yet.</li>
       {% endfor %}
     </ul>
 
-    <!-- Owner-only actions -->
+    
     {% if is_pm %}
-      <div class="page-header" style="margin-top: 20px;">
+      <div class="modern-card" style="margin-top: 30px; background: rgba(255, 180, 84, 0.05);">
+        <h4 style="margin-top: 0;">Project Management Actions</h4>
         <div class="project-actions">
           <button type="button" onclick="window.location.href='{% url 'projects:project_edit' project.pk %}'">Edit Project</button>
-          <button type="button" onclick="window.location.href='{% url 'projects:project_add_role' project.pk %}'">Add Role</button>
           <button type="button" onclick="window.location.href='{% url 'projects:project_state_change' project.pk %}'">Change Status</button>
           <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_transfer_ownership' project.pk %}'">Transfer Ownership</button>
-          <button type="button" class="remove-btn" onclick="openModal('deleteProjectModal')">Delete Project</button>
+          <button type="button" class="remove-btn" onclick="window.location.href='{% url 'projects:project_delete' project.pk %}'">Delete Project</button>
         </div>
       </div>
     {% elif is_member %}
-      <div class="page-header" style="margin-top: 20px;">
-        <div class="project-actions">
-          <button type="button" class="secondary-btn" onclick="openModal('resignModal')">Resign from Project</button>
-        </div>
+      <div style="margin-top: 30px;">
+        <button type="button" class="remove-btn" onclick="window.location.href='{% url 'projects:project_resign' project.pk %}'">Resign from Project</button>
       </div>
     {% endif %}
 
   </div>
-
-  <!-- ============ Confirmation modals (share .modal-overlay from styles.css) ============ -->
-
-  {% if is_pm %}
-    <!-- Delete Project -->
-    <div class="modal-overlay" id="deleteProjectModal">
-      <div class="modal-box">
-        <h3>Delete Project</h3>
-        <p class="hint">
-          This will permanently delete "{{ project.title }}" along with all of its roles, job ads,
-          and membership records. This cannot be undone.
-        </p>
-        <form method="POST" action="{% url 'projects:project_delete' project.pk %}"
-              style="background:none;border:none;box-shadow:none;padding:0;">
-          {% csrf_token %}
-          <div class="modal-actions">
-            <button type="button" class="secondary-btn" onclick="closeModal('deleteProjectModal')">Cancel</button>
-            <button type="submit" class="remove-btn">Delete Project</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Remove Member (generic — form action/name filled in by JS per row) -->
-    <div class="modal-overlay" id="removeMemberModal">
-      <div class="modal-box">
-        <h3>Remove Member</h3>
-        <p class="hint">
-          Remove <strong id="removeMemberName"></strong> from this project?
-          They will lose access to the workspace and their role will be freed up.
-        </p>
-        <form method="POST" id="removeMemberForm"
-              style="background:none;border:none;box-shadow:none;padding:0;">
-          {% csrf_token %}
-          <div class="modal-actions">
-            <button type="button" class="secondary-btn" onclick="closeModal('removeMemberModal')">Cancel</button>
-            <button type="submit" class="remove-btn">Remove</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Delete Role (generic — form action/title filled in by JS per row) -->
-    <div class="modal-overlay" id="deleteRoleModal">
-      <div class="modal-box">
-        <h3>Delete Role</h3>
-        <p class="hint">
-          Delete the <strong id="deleteRoleName"></strong> role? Any open job ad for it will be
-          cancelled. This cannot be undone.
-        </p>
-        <form method="POST" id="deleteRoleForm"
-              style="background:none;border:none;box-shadow:none;padding:0;">
-          {% csrf_token %}
-          <div class="modal-actions">
-            <button type="button" class="secondary-btn" onclick="closeModal('deleteRoleModal')">Cancel</button>
-            <button type="submit" class="remove-btn">Delete Role</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  {% elif is_member %}
-    <!-- Resign -->
-    <div class="modal-overlay" id="resignModal">
-      <div class="modal-box">
-        <h3>Resign from Project</h3>
-        <p class="hint">Are you sure you want to resign from "{{ project.title }}"? This cannot be undone.</p>
-        <form method="POST" action="{% url 'projects:project_resign' project.pk %}"
-              style="background:none;border:none;box-shadow:none;padding:0;">
-          {% csrf_token %}
-          <label for="resignReason">Reason for resigning</label>
-          <textarea id="resignReason" name="reason" rows="4"
-                    placeholder="Please state your reason for resigning..." required></textarea>
-          <div class="modal-actions">
-            <button type="button" class="secondary-btn" onclick="closeModal('resignModal')">Cancel</button>
-            <button type="submit" class="remove-btn">Confirm Resignation</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  {% endif %}
-
-  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

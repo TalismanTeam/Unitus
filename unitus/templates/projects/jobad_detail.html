@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+    <title>Unitas - {{ job_ad.project_role.role_title }}</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    <div class="page-header" style="align-items: center; margin-bottom: 30px;">
+      <h2 style="margin: 0; font-size: 28px;">{{ job_ad.project_role.role_title }}</h2>
+      <span class="badge badge-outline">{{ job_ad.get_status_display }}</span>
+    </div>
+
+    <div class="modern-card">
+      <h4 style="margin-top: 0; color: var(--accent);">About the Project</h4>
+      <p style="font-size: 15px; margin-bottom: 25px;">{{ job_ad.project.short_description }}</p>
+
+      <hr>
+
+      <h4 style="color: var(--accent);">Role Details</h4>
+      <p style="font-size: 15px;">{{ job_ad.project_role.role_description }}</p>
+      
+      <div class="info-grid" style="margin-top: 20px;">
+        <div class="info-item">
+          <span class="info-label">Open Spots</span>
+          <span class="info-value" style="font-size: 18px; font-weight: bold;">{{ job_ad.project_role.capacity }}</span>
+        </div>
+      </div>
+
+      <h4 style="margin-top: 25px; color: var(--accent);">Requirements</h4>
+      {% if job_ad.project_role.projectroleskill_set.all %}
+        <ul class="skill-tags">
+          {% for role_skill in job_ad.project_role.projectroleskill_set.all %}
+            <li>{{ role_skill.skill.name }} <span>{{ role_skill.get_min_required_level_display }}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="hint">No specific skills listed for this role.</p>
+      {% endif %}
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+      <p class="hint" style="margin: 0;">Full details are visible to approved members only.</p>
+      <a href="{% url 'projects:browse' %}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">&larr; Back to search</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="{% static 'css/styles.css' %}"><title>Unitas - Transfer Ownership</title></head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <h2>Transfer Ownership — {{ project.title }}</h2>
+    <p class="hint" style="color:#ef4444;">Warning: this is permanent. You will immediately lose Project Manager privileges.</p>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <label for="{{ form.new_owner.id_for_label }}">New Project Manager</label>
+      {{ form.new_owner }}
+      {% if form.new_owner.errors %}<p style="color:#ef4444;">{{ form.new_owner.errors }}</p>{% endif %}
+
+      <label class="inline-check">{{ form.confirm }} {{ form.confirm.label }}</label>
+      {% if form.confirm.errors %}<p style="color:#ef4444;">{{ form.confirm.errors }}</p>{% endif %}
+
+      <button type="submit">Transfer Ownership</button>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
+    </form>
+  </div>
+</body>
+</html>

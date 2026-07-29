@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+    <title>Unitas - Edit {{ project.title }}</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="page-header">
+      <h2>Edit Project: {{ project.title }}</h2>
+    </div>
+
+    <form method="POST" novalidate class="modern-card">
+      {% csrf_token %}
+
+      <label for="{{ form.title.id_for_label }}">Project title</label>
+      {{ form.title }}
+      {% if form.title.errors %}<p style="color:#ef4444;">{{ form.title.errors }}</p>{% endif %}
+
+      <label for="{{ form.short_description.id_for_label }}">Short description</label>
+      {{ form.short_description }}
+      {% if form.short_description.errors %}<p style="color:#ef4444;">{{ form.short_description.errors }}</p>{% endif %}
+
+      <label for="{{ form.full_description.id_for_label }}">Full description</label>
+      {{ form.full_description }}
+      {% if form.full_description.errors %}<p style="color:#ef4444;">{{ form.full_description.errors }}</p>{% endif %}
+
+      <label for="{{ form.duration_days.id_for_label }}">Estimated duration (days)</label>
+      {{ form.duration_days }}
+      {% if form.duration_days.errors %}<p style="color:#ef4444;">{{ form.duration_days.errors }}</p>{% endif %}
+
+      <div style="margin-top: 30px; display: flex; gap: 15px;">
+        <button type="submit">Save Changes</button>
+        <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn" style="padding: 10px 20px; text-decoration: none; border-radius: 6px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

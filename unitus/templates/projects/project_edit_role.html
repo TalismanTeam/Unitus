@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+    <title>Unitas - Edit Role</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+    
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    <div class="page-header">
+      <h2>Edit Role — <span style="color: var(--muted); font-weight: normal;">{{ project.title }}</span></h2>
+    </div>
+
+    <form method="POST" novalidate class="modern-card">
+      {% csrf_token %}
+
+      <label for="{{ role_form.role_title.id_for_label }}">Role title</label>
+      {{ role_form.role_title }}
+      {% if role_form.role_title.errors %}<p style="color:#ef4444;">{{ role_form.role_title.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.capacity.id_for_label }}">Capacity</label>
+      {{ role_form.capacity }}
+      {% if role_form.capacity.errors %}<p style="color:#ef4444;">{{ role_form.capacity.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.role_description.id_for_label }}">Role description</label>
+      {{ role_form.role_description }}
+      {% if role_form.role_description.errors %}<p style="color:#ef4444;">{{ role_form.role_description.errors }}</p>{% endif %}
+
+      <hr>
+      <h4 style="margin-bottom: 15px;">Required skills</h4>
+      {{ formset.management_form }}
+      
+      <div id="skillFormsList">
+        {% for skill_form in formset %}
+          <div class="role-card skill-row" style="background: var(--bg); padding: 15px;">
+            {{ skill_form.id }}
+            <div style="flex: 2;">{{ skill_form.skill }}</div>
+            <div style="flex: 1;">{{ skill_form.min_required_level }}</div>
+            {% if skill_form.instance.pk %}
+              <div style="display: flex; align-items: center; gap: 5px; color: #ef4444;">
+                {{ skill_form.DELETE }} <label style="margin: 0; font-size: 13px; cursor: pointer;">Remove</label>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top: 30px; display: flex; gap: 15px;">
+        <button type="submit">Save Changes</button>
+        <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn" style="padding: 10px 20px; text-decoration: none; border-radius: 6px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

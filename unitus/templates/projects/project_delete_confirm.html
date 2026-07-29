@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="{% static 'css/styles.css' %}"><title>Unitas - Delete Project</title></head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    <h2>Delete "{{ project.title }}"?</h2>
+    <p class="hint">This permanently deletes the project, its roles, job ads, and membership history. This cannot be undone.</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <button type="submit" style="background:#ef4444;">Yes, delete permanently</button>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
+    </form>
+  </div>
+</body>
+</html>

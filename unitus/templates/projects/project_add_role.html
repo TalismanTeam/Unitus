@@ -1,22 +1,19 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <title>Unitas - Add Role - {{ project.title }}</title>
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+    <title>Unitas - {{ project.title }} - Add Role</title>
 </head>
-
 <body>
-
   <div class="container">
-
     <nav>
       <a href="{% url 'accounts:profile-page' %}">Profile</a>
       <a href="{% url 'projects:home' %}" class="active">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
-      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="ticketManagement.html">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
 
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
@@ -34,143 +31,149 @@
     {% endif %}
 
     <div class="page-header">
-      <h2>Add Role — {{ project.title }}</h2>
-      <span class="hint">Define the role, its capacity, and the skills required to fill it.</span>
+      <h2>{{ project.title }} — Add Role</h2>
+      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Go to Workspace</a>
     </div>
 
-    <p><a href="{% url 'projects:project_workspace' project.pk %}">&larr; Back to project</a></p>
+    <p class="hint">
+      Every role you add generates a job ad automatically — unless you mark it
+      as your own role, in which case it's assigned to you directly and no ad
+      is published for that slot.
+    </p>
 
-    <form method="POST">
+    {% if existing_roles %}
+      <h3>Roles added so far</h3>
+      <div id="rolesList">
+        {% for role in existing_roles %}
+          <div class="list-item">
+            <p><strong>{{ role.role_title }}</strong> (capacity: {{ role.capacity }})</p>
+            <p class="hint">{{ role.role_description }}</p>
+            <p>
+              <strong>Ad status:</strong>
+              {% if role.jobad %}{{ role.jobad.get_status_display }}{% else %}—{% endif %}
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+      <hr>
+    {% endif %}
+
+    <h3>Add a new role</h3>
+
+    <form method="POST" novalidate id="roleForm">
       {% csrf_token %}
 
       {% if role_form.non_field_errors %}
-        <p class="hint" style="color:#ef4444;">{{ role_form.non_field_errors|join:" " }}</p>
-      {% endif %}
-      {% if formset.non_form_errors %}
-        <p class="hint" style="color:#ef4444;">{{ formset.non_form_errors|join:" " }}</p>
+        <p style="color:#ef4444;">{{ role_form.non_field_errors }}</p>
       {% endif %}
 
-      <h3>Role Details</h3>
-
-      <label for="{{ role_form.role_title.id_for_label }}">Role Title</label>
+      <label for="{{ role_form.role_title.id_for_label }}">Role title</label>
       {{ role_form.role_title }}
-      {% if role_form.role_title.errors %}
-        <p class="hint" style="color:#ef4444; margin-top:-16px;">{{ role_form.role_title.errors|join:" " }}</p>
-      {% endif %}
+      {% if role_form.role_title.errors %}<p style="color:#ef4444;">{{ role_form.role_title.errors }}</p>{% endif %}
 
-      <label for="{{ role_form.role_description.id_for_label }}">Role Description</label>
-      {{ role_form.role_description }}
-      {% if role_form.role_description.errors %}
-        <p class="hint" style="color:#ef4444; margin-top:-16px;">{{ role_form.role_description.errors|join:" " }}</p>
-      {% endif %}
-
-      <label for="{{ role_form.capacity.id_for_label }}">Capacity</label>
+      <label for="{{ role_form.capacity.id_for_label }}">Capacity (number of people needed)</label>
       {{ role_form.capacity }}
-      {% if role_form.capacity.errors %}
-        <p class="hint" style="color:#ef4444; margin-top:-16px;">{{ role_form.capacity.errors|join:" " }}</p>
+      {% if role_form.capacity.errors %}<p style="color:#ef4444;">{{ role_form.capacity.errors }}</p>{% endif %}
+
+      <label for="{{ role_form.role_description.id_for_label }}">Role description (shown on the advertisement)</label>
+      {{ role_form.role_description }}
+      {% if role_form.role_description.errors %}<p style="color:#ef4444;">{{ role_form.role_description.errors }}</p>{% endif %}
+
+      <label class="inline-check">
+        {{ role_form.is_owner_role }}
+        This is the project owner's own role
+      </label>
+      {% if pm_already_has_role %}
+        <p class="hint">You already have a role on this project — checking this will show an error.</p>
       {% endif %}
 
       <hr>
 
-      <h3>Required Skills</h3>
-      <p class="hint">Optional — add the skills and minimum mastery level a candidate needs for this role. Leave a row's skill blank to skip it, or remove it entirely.</p>
+      <h4>Required skills for this role</h4>
+      <p class="hint">Optional — click "Add Skill" to attach mastery requirements for this role.</p>
 
       {{ formset.management_form }}
-
-      <div id="skillFormsetContainer">
+      
+      <div id="skillFormsList">
         {% for skill_form in formset %}
           <div class="role-card skill-form-row">
-            <div class="role-card-header">
-              <strong>Skill {{ forloop.counter }}</strong>
-              <button type="button" class="remove-btn" style="padding:4px 10px; font-size:12px;" onclick="removeSkillRow(this)">Remove</button>
-            </div>
-
-            {% for hidden in skill_form.hidden_fields %}{{ hidden }}{% endfor %}
-
+            {{ skill_form.id }}
             <div class="skill-row">
               {{ skill_form.skill }}
               {{ skill_form.min_required_level }}
+              <button type="button" class="remove-skill-btn">&times;</button>
             </div>
-
-            {% if skill_form.skill.errors %}
-              <p class="hint" style="color:#ef4444;">{{ skill_form.skill.errors|join:" " }}</p>
-            {% endif %}
-            {% if skill_form.min_required_level.errors %}
-              <p class="hint" style="color:#ef4444;">{{ skill_form.min_required_level.errors|join:" " }}</p>
-            {% endif %}
+            {% if skill_form.skill.errors %}<p style="color:#ef4444;">{{ skill_form.skill.errors }}</p>{% endif %}
+            {% if skill_form.min_required_level.errors %}<p style="color:#ef4444;">{{ skill_form.min_required_level.errors }}</p>{% endif %}
           </div>
         {% endfor %}
       </div>
 
-      <button type="button" class="secondary-btn" onclick="addSkillRow()">+ Add another skill</button>
+      <button type="button" id="addSkillBtn" class="add-skill-btn">+ Add Skill Requirement</button>
 
-      <div class="modal-actions">
-        <button type="button" class="secondary-btn" onclick="window.location.href='{% url 'projects:project_workspace' project.pk %}'">Cancel</button>
-        <button type="submit">Confirm &amp; Add Role</button>
-      </div>
+      <hr>
+      <button type="submit">Add Role</button>
     </form>
 
-    <!-- Blank row template used by addSkillRow() below. Rendered via Django's
-         formset.empty_form so field names/widgets always match the formset
-         (skill choices, level choices, etc.) without hardcoding them in JS. -->
-    <template id="skillRowTemplate">
-      <div class="role-card skill-form-row">
-        <div class="role-card-header">
-          <strong>Skill</strong>
-          <button type="button" class="remove-btn" style="padding:4px 10px; font-size:12px;" onclick="removeSkillRow(this)">Remove</button>
-        </div>
-        <div class="skill-row">
-          {{ formset.empty_form.skill }}
-          {{ formset.empty_form.min_required_level }}
-        </div>
-      </div>
-    </template>
-
-    {% if existing_roles %}
-      <h3 style="margin-top: 32px;">Roles already added to this project</h3>
-      <div id="existingRolesList">
-        {% for role in existing_roles %}
-          <div class="list-item">
-            <div>
-              <p><strong>{{ role.role_title }}</strong></p>
-              <p class="hint">{{ role.role_description }}</p>
-            </div>
-            <span class="hint">capacity: {{ role.capacity }}</span>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+    <div class="page-header" style="margin-top: 20px;">
+      <a href="{% url 'projects:project_workspace' project.pk %}">I'm done adding roles — go to workspace</a>
+    </div>
 
   </div>
 
+  
+  <template id="skillRowTemplate">
+    <div class="role-card skill-form-row">
+      <div class="skill-row">
+        {{ formset.empty_form.skill }}
+        {{ formset.empty_form.min_required_level }}
+        <button type="button" class="remove-skill-btn">&times;</button>
+      </div>
+    </div>
+  </template>
+
+  
   <script>
-    function renumberSkillRows() {
-      document.querySelectorAll('#skillFormsetContainer .skill-form-row').forEach((row, i) => {
-        row.querySelector('.role-card-header strong').textContent = 'Skill ' + (i + 1);
-      });
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const skillFormsList = document.getElementById('skillFormsList');
+        const addSkillBtn = document.getElementById('addSkillBtn');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        const templateHtml = document.getElementById('skillRowTemplate').innerHTML;
 
-    function addSkillRow() {
-      const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
-      const index = parseInt(totalFormsInput.value, 10);
+        
+        function reindexForms() {
+            const rows = skillFormsList.querySelectorAll('.skill-form-row');
+            totalFormsInput.value = rows.length;
+            rows.forEach((row, index) => {
+                row.querySelectorAll('input, select').forEach(input => {
+                    
+                    if (input.id) input.id = input.id.replace(/form-\d+-/g, `form-${index}-`);
+                    if (input.name) input.name = input.name.replace(/form-\d+-/g, `form-${index}-`);
+                });
+            });
+        }
 
-      const templateHtml = document.getElementById('skillRowTemplate').innerHTML.replace(/__prefix__/g, index);
+        
+        addSkillBtn.addEventListener('click', function () {
+            const currentCount = parseInt(totalFormsInput.value, 10);
+          
+            const newRowHtml = templateHtml.replace(/__prefix__/g, currentCount);
+            
+            skillFormsList.insertAdjacentHTML('beforeend', newRowHtml);
+            totalFormsInput.value = currentCount + 1;
+        });
 
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = templateHtml.trim();
-      const newRow = wrapper.firstElementChild;
-
-      document.getElementById('skillFormsetContainer').appendChild(newRow);
-      totalFormsInput.value = index + 1;
-      renumberSkillRows();
-    }
-
-    function removeSkillRow(button) {
-      button.closest('.skill-form-row').remove();
-      renumberSkillRows();
-    }
+        
+        skillFormsList.addEventListener('click', function (event) {
+            if (event.target.classList.contains('remove-skill-btn') || event.target.closest('.remove-skill-btn')) {
+                const row = event.target.closest('.skill-form-row');
+                if (row) {
+                    row.remove();
+                    reindexForms(); 
+                }
+            }
+        });
+    });
   </script>
-
-  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

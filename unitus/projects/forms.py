@@ -1,5 +1,7 @@
 from django import forms
 from django.forms import BaseModelFormSet, modelformset_factory
+from django.forms import modelformset_factory
+from skills.models import Skill
 
 from .models import Project, ProjectRole, ProjectRoleSkill
 
@@ -18,6 +20,13 @@ class ProjectForm(forms.ModelForm):
 class ProjectRoleForm(forms.ModelForm):
     """Step 2: one role at a time. Project is set in the view."""
 
+    is_owner_role = forms.BooleanField(
+        required=False,
+        label="This is the project owner's own role",
+        help_text="Check this only if YOU (the PM) will personally fill this role. "
+                  "Leave unchecked to publish it as an open job ad.",
+    )
+
     class Meta:
         model = ProjectRole
         fields = ['role_title', 'role_description', 'capacity']
@@ -30,6 +39,21 @@ class ProjectRoleForm(forms.ModelForm):
         if capacity < 1:
             raise forms.ValidationError('Capacity must be at least 1.')
         return capacity
+
+class ProjectRoleSkillForm(forms.ModelForm):
+    """Restricts skill choices to the pre-approved catalog (seed data from
+    skills/migrations/0002_seed_categories_and_skills.py). PM can't type an
+    arbitrary skill name here — only pick from what's already in the DB."""
+
+    class Meta:
+        model = ProjectRoleSkill
+        fields = ['skill', 'min_required_level']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['skill'].queryset = Skill.objects.filter(
+            is_approved=True
+        ).select_related('category').order_by('category__category_name', 'name')
 
 
 class BaseRoleSkillFormSet(BaseModelFormSet):
@@ -66,8 +90,8 @@ class BaseRoleSkillFormSet(BaseModelFormSet):
 
 RoleSkillFormSet = modelformset_factory(
     ProjectRoleSkill,
-    fields=['skill', 'min_required_level'],
-    extra=3,
+    form=ProjectRoleSkillForm,
+    extra=0,
     can_delete=True,
     formset=BaseRoleSkillFormSet,
 )
@@ -106,7 +130,6 @@ class TransferOwnershipForm(forms.Form):
 
 class ProjectEditForm(forms.ModelForm):
 
-
     class Meta:
         model = Project
         fields = ['title', 'short_description', 'full_description', 'duration_days']
@@ -117,7 +140,6 @@ class ProjectEditForm(forms.ModelForm):
 
 
 class ProjectRoleEditForm(forms.ModelForm):
-
 
     class Meta:
         model = ProjectRole
@@ -134,7 +156,6 @@ class ProjectRoleEditForm(forms.ModelForm):
 
 
 class ProjectResignForm(forms.Form):
-
 
     reason = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Please state your reason for resigning...'}),

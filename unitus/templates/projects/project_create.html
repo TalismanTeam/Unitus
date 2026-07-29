@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+    <title>Unitas - Create Project</title>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="ticketManagement.html">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    {% if messages %}
+      <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="page-header">
+      <div>
+        <h2>Create New Project</h2>
+        <p class="hint">Step 1 of 2 — Project basics. You'll add roles and skills on the next page.</p>
+      </div>
+    </div>
+
+    <form method="POST" novalidate class="modern-card">
+      {% csrf_token %}
+      
+      <label for="{{ form.title.id_for_label }}">Project title</label>
+      {{ form.title }}
+      {% if form.title.errors %}<p style="color:#ef4444; font-size:13px;">{{ form.title.errors }}</p>{% endif %}
+
+      <label for="{{ form.short_description.id_for_label }}">Short description <span class="hint">(shown on ads)</span></label>
+      {{ form.short_description }}
+      {% if form.short_description.errors %}<p style="color:#ef4444; font-size:13px;">{{ form.short_description.errors }}</p>{% endif %}
+
+      <label for="{{ form.full_description.id_for_label }}">Full description</label>
+      {{ form.full_description }}
+      {% if form.full_description.errors %}<p style="color:#ef4444; font-size:13px;">{{ form.full_description.errors }}</p>{% endif %}
+
+      <label for="{{ form.duration_days.id_for_label }}">Estimated duration (days)</label>
+      {{ form.duration_days }}
+      {% if form.duration_days.errors %}<p style="color:#ef4444; font-size:13px;">{{ form.duration_days.errors }}</p>{% endif %}
+
+      <div style="margin-top: 30px; display: flex; gap: 15px;">
+        <button type="submit">Create Project &amp; Continue</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
