@@ -111,7 +111,14 @@ def serialize_public_profile(user):
     }
 
 
-def serialize_project_summary(project, viewer):
+def serialize_project_summary(project, viewer, role_title=None):
+    """
+    `role_title` is the viewer's ProjectRole.role_title for this project via
+    their ProjectMember row (projects.models.ProjectMember.project_role),
+    looked up by the caller. It's None when the viewer has no membership row
+    for this project (e.g. a PM who never assigned themselves a role) or
+    when project_role is null (ProjectMember.project_role is nullable).
+    """
     return {
         "id": project.id,
         "title": project.title,
@@ -120,6 +127,7 @@ def serialize_project_summary(project, viewer):
         "duration_days": project.duration_days,
         "created_at": project.created_at.isoformat(),
         "is_pm": project.pm_id == viewer.id,
+        "role_title": role_title,
     }
 
 

@@ -1,11 +1,11 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unitas - Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
     <div class="container">
@@ -27,17 +27,19 @@
             <h1>User Dashboard</h1>
 
             <div class="tabs">
-                <button class="tab-btn active">In Progress</button>
-                <button class="tab-btn">Suspended</button>
-                <button class="tab-btn">Completed/Terminated</button>
-                <button class="tab-btn">My Managed Projects</button>
-                <button class="tab-btn">All</button>
+                <button class="tab-btn active" data-tab="in_progress">In Progress</button>
+                <button class="tab-btn" data-tab="suspended">Suspended</button>
+                <button class="tab-btn" data-tab="completed">Completed/Terminated</button>
+                <button class="tab-btn" data-tab="managed">My Managed Projects</button>
+                <button class="tab-btn" data-tab="all">All</button>
             </div>
 
             <div class="tab-content">
-                <h2>In Progress Projects</h2>
-                <ul>
-                    <li><strong>Project Alpha</strong> - Role: Developer</li>
+                <h2 id="tab-content-heading">In Progress Projects</h2>
+                <p id="project-list-status" style="display: none;"></p>
+                <ul id="project-list">
+                    <!-- Populated by dashboard.js from
+                         GET /auth/users/me/dashboard/projects?tab=... -->
                 </ul>
             </div>
 
@@ -50,5 +52,6 @@
             </section>
         </main>
     </div>
+    <script src="{% static 'js/dashboard.js' %}"></script>
 </body>
 </html>

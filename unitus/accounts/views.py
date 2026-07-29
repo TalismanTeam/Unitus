@@ -271,9 +271,14 @@ def dashboard_projects_view(request):
     tab = request.GET.get("tab", "all")
     user = request.user
 
-    member_project_ids = user.projectmember_set.filter(
+    member_rows = user.projectmember_set.filter(
         member_status="ACTIVE"
-    ).values_list("project_id", flat=True)
+    ).select_related("project_role")
+    member_project_ids = member_rows.values_list("project_id", flat=True)
+    role_title_by_project_id = {
+        row.project_id: (row.project_role.role_title if row.project_role else None)
+        for row in member_rows
+    }
 
     if tab == "managed":
         qs = Project.objects.filter(pm=user).exclude(state="TERMINATED")
@@ -288,7 +293,13 @@ def dashboard_projects_view(request):
         return bad_request(f"invalid tab '{tab}'")
 
     return JsonResponse(
-        [serialize_project_summary(p, user) for p in qs], safe=False
+        [
+            serialize_project_summary(
+                p, user, role_title=role_title_by_project_id.get(p.id)
+            )
+            for p in qs
+        ],
+        safe=False,
     )
 
 
@@ -393,3 +404,18 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     return render(request, 'dashboard.html')
+
+
+ 
+@login_required
+def profile_page_view(request, id=None):
+    """
+    /auth/profile/       -> id is None      -> renders your own profile page
+    /auth/profile/<id>/   -> id is given     -> renders someone else's profile page
+ 
+    Passes `profile_id` into the template so its inline script can set
+    PROFILE_ID and main.js knows whether to hit /auth/users/me or
+    /auth/users/<id>.
+    """
+    return render(request, 'userprofile.html', {'profile_id': id})
+ 
