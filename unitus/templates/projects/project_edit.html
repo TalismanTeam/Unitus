@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
     <title>Unitas - Edit {{ project.title }}</title>
 </head>
 <body>
@@ -14,7 +15,7 @@
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="ticketManagement.html">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
-      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; margin-left: auto;">
         {% csrf_token %}
         <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
       </form>
@@ -24,9 +25,11 @@
       <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
     {% endif %}
 
-    <h2>Edit {{ project.title }}</h2>
+    <div class="page-header">
+      <h2>Edit Project: {{ project.title }}</h2>
+    </div>
 
-    <form method="POST" novalidate>
+    <form method="POST" novalidate class="modern-card">
       {% csrf_token %}
 
       <label for="{{ form.title.id_for_label }}">Project title</label>
@@ -45,9 +48,10 @@
       {{ form.duration_days }}
       {% if form.duration_days.errors %}<p style="color:#ef4444;">{{ form.duration_days.errors }}</p>{% endif %}
 
-      <hr>
-      <button type="submit">Save Changes</button>
-      <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn">Cancel</a>
+      <div style="margin-top: 30px; display: flex; gap: 15px;">
+        <button type="submit">Save Changes</button>
+        <a href="{% url 'projects:project_workspace' project.pk %}" class="secondary-btn" style="padding: 10px 20px; text-decoration: none; border-radius: 6px;">Cancel</a>
+      </div>
     </form>
   </div>
 </body>

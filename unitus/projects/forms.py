@@ -58,7 +58,7 @@ class ProjectRoleSkillForm(forms.ModelForm):
 RoleSkillFormSet = modelformset_factory(
     ProjectRoleSkill,
     form=ProjectRoleSkillForm,
-    extra=3,
+    extra=0,
     can_delete=True,
 )
 

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
     <title>Unitas - {{ project.title }} - Add Role</title>
 </head>
 <body>
@@ -59,7 +60,7 @@
 
     <h3>Add a new role</h3>
 
-    <form method="POST" novalidate>
+    <form method="POST" novalidate id="roleForm">
       {% csrf_token %}
 
       {% if role_form.non_field_errors %}
@@ -89,22 +90,27 @@
       <hr>
 
       <h4>Required skills for this role</h4>
-      <p class="hint">Optional — pick a skill and the minimum mastery level required for each row you fill in.</p>
+      <p class="hint">Optional — click "Add Skill" to attach mastery requirements for this role.</p>
 
       {{ formset.management_form }}
+      
       <div id="skillFormsList">
         {% for skill_form in formset %}
-          <div class="role-card">
+          <div class="role-card skill-form-row">
             {{ skill_form.id }}
             <div class="skill-row">
               {{ skill_form.skill }}
               {{ skill_form.min_required_level }}
+              <button type="button" class="remove-skill-btn">&times;</button>
             </div>
             {% if skill_form.skill.errors %}<p style="color:#ef4444;">{{ skill_form.skill.errors }}</p>{% endif %}
             {% if skill_form.min_required_level.errors %}<p style="color:#ef4444;">{{ skill_form.min_required_level.errors }}</p>{% endif %}
           </div>
         {% endfor %}
       </div>
+
+      <!-- دکمه افزودن مهارت جدید به صورت داینامیک -->
+      <button type="button" id="addSkillBtn" class="add-skill-btn">+ Add Skill Requirement</button>
 
       <hr>
       <button type="submit">Add Role</button>
@@ -115,5 +121,60 @@
     </div>
 
   </div>
+
+  
+  <template id="skillRowTemplate">
+    <div class="role-card skill-form-row">
+      <div class="skill-row">
+        {{ formset.empty_form.skill }}
+        {{ formset.empty_form.min_required_level }}
+        <button type="button" class="remove-skill-btn">&times;</button>
+      </div>
+    </div>
+  </template>
+
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const skillFormsList = document.getElementById('skillFormsList');
+        const addSkillBtn = document.getElementById('addSkillBtn');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        const templateHtml = document.getElementById('skillRowTemplate').innerHTML;
+
+        
+        function reindexForms() {
+            const rows = skillFormsList.querySelectorAll('.skill-form-row');
+            totalFormsInput.value = rows.length;
+            rows.forEach((row, index) => {
+                row.querySelectorAll('input, select').forEach(input => {
+                    
+                    if (input.id) input.id = input.id.replace(/form-\d+-/g, `form-${index}-`);
+                    if (input.name) input.name = input.name.replace(/form-\d+-/g, `form-${index}-`);
+                });
+            });
+        }
+
+        
+        addSkillBtn.addEventListener('click', function () {
+            const currentCount = parseInt(totalFormsInput.value, 10);
+          
+            const newRowHtml = templateHtml.replace(/__prefix__/g, currentCount);
+            
+            skillFormsList.insertAdjacentHTML('beforeend', newRowHtml);
+            totalFormsInput.value = currentCount + 1;
+        });
+
+        
+        skillFormsList.addEventListener('click', function (event) {
+            if (event.target.classList.contains('remove-skill-btn') || event.target.closest('.remove-skill-btn')) {
+                const row = event.target.closest('.skill-form-row');
+                if (row) {
+                    row.remove();
+                    reindexForms(); 
+                }
+            }
+        });
+    });
+  </script>
 </body>
 </html>
