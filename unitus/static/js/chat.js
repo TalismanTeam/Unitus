@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatHistory) {
         new ChatRoomController(chatHistory);
     }
+
+    const sidebar = document.querySelector('.chat-list-body');
+    if (sidebar) {
+        new SidebarNotifier(sidebar);
+    }
 });
 
 // ---------------------------------------------------------------------
@@ -294,5 +299,128 @@ class ChatRoomController {
                 lastLabel = label;
             }
         });
+    }
+}
+
+
+// ---------------------------------------------------------------------
+// Sidebar live-updater — keeps the conversation list current on any
+// page (inbox, room, new-direct-chat) without a full reload.
+// ---------------------------------------------------------------------
+
+class SidebarNotifier {
+    constructor(sidebarBody) {
+        this.sidebarBody = sidebarBody;
+        this._connectSocket();
+    }
+
+    _connectSocket() {
+        const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        this.socket = new WebSocket(scheme + window.location.host + '/ws/chat/notify/');
+
+        this.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.action === 'conversation_update') {
+                this._upsertConversation(data.conversation);
+            }
+        };
+
+        this.socket.onclose = () => console.warn('[Unitus Chat] Notification socket disconnected.');
+    }
+
+    _upsertConversation(conv) {
+        const emptyHint = this.sidebarBody.querySelector('.empty-hint');
+        if (emptyHint) emptyHint.remove();
+
+        let item = this.sidebarBody.querySelector(`.chat-item[data-room-id="${conv.room_id}"]`);
+        if (!item) {
+            item = this._buildItem(conv);
+        } else {
+            this._updateItem(item, conv);
+        }
+
+        // Move to the top, exactly like Telegram — most recent activity first.
+        this.sidebarBody.insertBefore(item, this.sidebarBody.firstChild);
+    }
+
+    _updateItem(item, conv) {
+        const lastMsgEl = item.querySelector('.last-msg');
+        if (lastMsgEl) lastMsgEl.textContent = conv.last_message_content || 'No messages yet';
+
+        const timeEl = item.querySelector('.chat-time');
+        if (timeEl && conv.last_message_at) {
+            timeEl.textContent = this._relativeTime(conv.last_message_at);
+        }
+
+        let badge = item.querySelector('.unread-badge');
+        if (conv.unread_count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                item.querySelector('.chat-info-bottom').appendChild(badge);
+            }
+            badge.textContent = conv.unread_count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    _buildItem(conv) {
+        const a = document.createElement('a');
+        a.href = `/chat/room/${conv.room_id}/`;
+        a.className = 'chat-item';
+        a.setAttribute('data-room-id', conv.room_id);
+
+        const initial = (conv.display_name || '?').charAt(0).toUpperCase();
+        const unreadHtml = conv.unread_count > 0
+            ? `<span class="unread-badge">${conv.unread_count}</span>` : '';
+        const timeHtml = conv.last_message_at
+            ? `<span class="chat-time">${this._relativeTime(conv.last_message_at)}</span>` : '';
+
+        a.innerHTML = `
+            <div class="chat-avatar">${initial}</div>
+            <div class="chat-info">
+                <div class="chat-info-top">
+                    <strong></strong>
+                    ${timeHtml}
+                </div>
+                <div class="chat-info-bottom">
+                    <span class="last-msg"></span>
+                    ${unreadHtml}
+                </div>
+                ${conv.is_closed ? '<span class="closed-tag">Closed</span>' : ''}
+            </div>
+            <button class="chat-delete-btn" data-delete-room="${conv.room_id}" title="Delete conversation" type="button">&times;</button>
+        `;
+
+        // textContent for user-controlled strings -> safe against XSS
+        a.querySelector('strong').textContent = conv.display_name;
+        a.querySelector('.last-msg').textContent = conv.last_message_content || 'No messages yet';
+
+        // Newly-added delete button needs its own click handler too.
+        a.querySelector('[data-delete-room]').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const roomId = e.currentTarget.getAttribute('data-delete-room');
+            if (!confirm('Delete this conversation? It will be removed from your inbox only.')) return;
+
+            fetch(`/chat/room/${roomId}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            }).then((res) => {
+                if (res.ok) a.remove();
+            });
+        });
+
+        this.sidebarBody.appendChild(a); // temporary; caller moves it to the top
+        return a;
+    }
+
+    _relativeTime(isoString) {
+        const diffSeconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+        if (diffSeconds < 60) return 'just now';
+        if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
+        if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
+        return `${Math.floor(diffSeconds / 86400)}d ago`;
     }
 }

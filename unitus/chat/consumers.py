@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from . import services
-from .serialization import serialize_message
+from .serialization import serialize_message, serialize_conversation_summary
 
 User = get_user_model()
 
@@ -17,6 +17,26 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def chat_event(self, event):
         await self.send(text_data=json.dumps(event['payload']))
+
+
+async def _broadcast_sidebar_updates(channel_layer, room_id):
+    """
+    After a message is saved, push a personalized conversation-summary
+    update to every active participant's personal notification group,
+    so their sidebar (on ANY page) reorders/updates live.
+    """
+    participant_ids = await database_sync_to_async(services.get_active_participant_user_ids)(room_id)
+    for uid in participant_ids:
+        summary = await database_sync_to_async(services.get_conversation_summary_for_participant)(room_id, uid)
+        if summary is None:
+            continue
+        await channel_layer.group_send(
+            f'chat_notify_{uid}',
+            {'type': 'chat.event', 'payload': {
+                'action': 'conversation_update',
+                'conversation': serialize_conversation_summary(summary),
+            }},
+        )
 
 
 class ChatConsumer(BaseChatConsumer):
@@ -64,9 +84,6 @@ class ChatConsumer(BaseChatConsumer):
         elif action == 'mark_read':
             await self._mark_read_and_broadcast()
 
-
-
-
     async def _handle_send_message(self, data):
         if await database_sync_to_async(services.is_room_closed)(self.room_id):
             return
@@ -78,13 +95,16 @@ class ChatConsumer(BaseChatConsumer):
         message = await database_sync_to_async(services.save_message)(
             self.room_id, self.user.id, content
         )
-        message.sender = self.user  
+        message.sender = self.user
         payload = {'action': 'new_message', 'message': serialize_message(message)}
-        payload['message']['client_ref'] = data.get('client_ref')   
+        payload['message']['client_ref'] = data.get('client_ref')
 
         await self.channel_layer.group_send(
             self.group_name, {'type': 'chat.event', 'payload': payload}
         )
+
+        
+        await _broadcast_sidebar_updates(self.channel_layer, self.room_id)
 
     async def _mark_read_and_broadcast(self):
         await database_sync_to_async(services.mark_room_read)(self.room_id, self.user.id)
@@ -98,15 +118,25 @@ class ChatConsumer(BaseChatConsumer):
             self.group_name, {'type': 'chat.event', 'payload': payload}
         )
 
+        
+        summary = await database_sync_to_async(services.get_conversation_summary_for_participant)(
+            self.room_id, self.user.id
+        )
+        if summary:
+            await self.channel_layer.group_send(
+                f'chat_notify_{self.user.id}',
+                {'type': 'chat.event', 'payload': {
+                    'action': 'conversation_update',
+                    'conversation': serialize_conversation_summary(summary),
+                }},
+            )
+
 
 class DirectChatConsumer(BaseChatConsumer):
     """
     Handles a DIRECT chat that might not have a ChatRoom row yet — the
     room is created lazily, exactly when the first message is sent.
     URL: ws/chat/user/<other_user_id>/
-
-    Both sides join a group keyed by their sorted user-id pair (not by
-    room_id), since the room might not exist yet when they connect.
     """
 
     async def connect(self):
@@ -155,10 +185,37 @@ class DirectChatConsumer(BaseChatConsumer):
         if message is None:
             return
 
-        message.sender = self.user  
+        message.sender = self.user
         payload = {'action': 'new_message', 'message': serialize_message(message)}
         payload['message']['room_id'] = room.id
 
         await self.channel_layer.group_send(
             self.group_name, {'type': 'chat.event', 'payload': payload}
         )
+
+        
+        await _broadcast_sidebar_updates(self.channel_layer, room.id)
+
+
+class UserNotificationConsumer(BaseChatConsumer):
+    """
+    A lightweight, room-agnostic socket used purely to keep the
+    conversation sidebar live-updated on any page (inbox, room,
+    new-direct-chat). One instance per open tab; joins a personal
+    group keyed by user id.
+    URL: ws/chat/notify/
+    """
+
+    async def connect(self):
+        self.user = self.scope['user']
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
+        self.group_name = f'chat_notify_{self.user.id}'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        if hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)

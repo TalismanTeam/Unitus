@@ -16,3 +16,16 @@ def serialize_message(message):
         # 'sent_at': django_date(local_time, "F j, Y, g:i a"),
         'sent_at': message.sent_at.isoformat(),
     }
+
+
+def serialize_conversation_summary(summary):
+    return {
+        'room_id': summary['room_id'],
+        'type': summary['type'],
+        'display_name': summary['display_name'],
+        'avatar_icon_name': summary['avatar_icon'].icon_name if summary['avatar_icon'] else None,
+        'last_message_content': summary['last_message_content'],
+        'last_message_at': summary['last_message_at'].isoformat() if summary['last_message_at'] else None,
+        'unread_count': summary['unread_count'],
+        'is_closed': summary['is_closed'],
+    }

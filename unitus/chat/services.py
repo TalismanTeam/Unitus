@@ -209,3 +209,56 @@ def get_other_participant_last_read(room, user):
         return None
     other = ChatParticipant.objects.filter(room=room).exclude(user=user).first()
     return other.last_read_at if other else None
+
+
+def _conversation_summary_for(room, participant, user):
+    """Shared by get_inbox_for_user() and the live sidebar-notification path."""
+    last_message = room.message_set.order_by('-id').first()
+
+    unread_qs = room.message_set.exclude(sender=user)
+    if participant.last_read_at:
+        unread_qs = unread_qs.filter(sent_at__gt=participant.last_read_at)
+    unread_count = unread_qs.count()
+
+    if room.type == ChatRoom.Type.DIRECT:
+        other = (
+            ChatParticipant.objects.filter(room=room)
+            .exclude(user=user)
+            .select_related('user', 'user__avatar_icon')
+            .first()
+        )
+        display_name = other.user.username if other else 'Unknown'
+        avatar = other.user.avatar_icon if other else None
+    else:
+        display_name = room.project.title if room.project else 'Group Chat'
+        avatar = None
+
+    return {
+        'room_id': room.id,
+        'type': room.type,
+        'display_name': display_name,
+        'avatar_icon': avatar,
+        'last_message_content': last_message.content if last_message else '',
+        'last_message_at': last_message.sent_at if last_message else None,
+        'unread_count': unread_count,
+        'is_closed': room.is_closed,
+    }
+
+
+def get_active_participant_user_ids(room_id):
+    return list(
+        ChatParticipant.objects.filter(room_id=room_id, is_active=True).values_list('user_id', flat=True)
+    )
+
+
+def get_conversation_summary_for_participant(room_id, user_id):
+    """Used to push a personalized sidebar-update to one participant after a new message."""
+    participant = (
+        ChatParticipant.objects
+        .select_related('room', 'room__project', 'user')
+        .filter(room_id=room_id, user_id=user_id, is_active=True)
+        .first()
+    )
+    if participant is None:
+        return None
+    return _conversation_summary_for(participant.room, participant, participant.user)
