@@ -9,19 +9,21 @@ class TextFormatter:
     def profile_to_text(self, user: User) -> str:
         """
         Converts a User object into a text representation optimized for embeddings.
-        """
-        lines = []
 
-        if user.about_me:
-            lines.append(f"About Me: {user.about_me}")
+        Skills are listed first since they're the actual signal used to match
+        against job ad requirements. `about_me` is intentionally excluded: it's
+        freeform prose that isn't a reliable skill signal and tends to pull the
+        embedding toward semantically-similar-sounding but skill-irrelevant ads.
+        `Open to Work` is also excluded - it's constant across every profile in
+        the candidate pool (already enforced via is_open_to_work=True at the
+        query level), so it only added noise, never discriminative signal.
+        """
+        lines = ["Skills:"]
+        lines.extend(self._format_user_skills(user))
 
         if user.education_background:
+            lines.append("")
             lines.append(f"Education: {user.education_background}")
-
-        lines.append(f"Open to Work: {'Yes' if user.is_open_to_work else 'No'}")
-
-        lines.append("\nSkills:")
-        lines.extend(self._format_user_skills(user))
 
         return "\n".join(lines)
 
@@ -67,18 +69,21 @@ class TextFormatter:
     def job_ad_to_text(self, job_ad: JobAd) -> str:
         """
         Converts a JobAd entity (Project + specific ProjectRole) into a text representation.
+
+        Required Skills are listed first to mirror the ordering in profile_to_text,
+        keeping the two sides of the match symmetric in how strongly skills
+        dominate the embedded text relative to descriptive prose.
         """
         project = job_ad.project
         role = job_ad.project_role
 
-        lines = [
-            f"Project Title: {project.title}",
-            f"Project Description: {project.short_description}",
-            f"Role Title: {role.role_title}",
-            f"Role Description: {role.role_description}",
-            "Required Skills:"
-        ]
+        lines = ["Required Skills:"]
         lines.extend(self._format_role_skills(role))
+        lines.append("")
+        lines.append(f"Role Title: {role.role_title}")
+        lines.append(f"Role Description: {role.role_description}")
+        lines.append(f"Project Title: {project.title}")
+        lines.append(f"Project Description: {project.short_description}")
         return "\n".join(lines)
 
     def _format_project_roles(self, project: Project) -> list:
