@@ -26,7 +26,71 @@ document.addEventListener('DOMContentLoaded', () => {
             requiresAuth: true,
         });
     });
+
+    bindSendRequestModal();
 });
+
+// ---------------------------------------------------------------------
+// "Send Request" modal — lets a user apply straight from a job ad card.
+// Wired to POST /collaboration/tickets (see collaboration/views.py),
+// the same endpoint the standalone job-ad detail page uses.
+// ---------------------------------------------------------------------
+
+let activeRequestAd = null;
+
+function bindSendRequestModal() {
+    const confirmBtn = document.getElementById('sendRequestConfirmBtn');
+    if (!confirmBtn) return; // modal markup not present on this page
+
+    confirmBtn.addEventListener('click', async () => {
+        if (!activeRequestAd) return;
+
+        const errorEl = document.getElementById('sendRequestError');
+        const messageInput = document.getElementById('sendRequestMessage');
+        errorEl.style.display = 'none';
+
+        const { ok, data } = await apiFetch('/collaboration/tickets', {
+            method: 'POST',
+            body: {
+                type: 'application',
+                project_id: activeRequestAd.project_id,
+                project_role_id: activeRequestAd.project_role_id,
+                message_text: messageInput.value.trim() || undefined,
+            },
+        });
+
+        if (!ok) {
+            errorEl.textContent = (data && data.error) || 'Could not send the request.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        closeModal('sendRequestModal');
+
+        const btn = document.querySelector(`.apply-btn[data-ad-id="${activeRequestAd.id}"]`);
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Request Sent';
+        }
+        activeRequestAd = null;
+    });
+}
+
+function onSendRequestClick(ad) {
+    if (!window.UNITUS_IS_AUTHENTICATED) {
+        window.location.href = `${window.UNITUS_LOGIN_URL}?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+    }
+
+    activeRequestAd = ad;
+    const subtitle = document.getElementById('sendRequestSubtitle');
+    if (subtitle) subtitle.textContent = `${ad.role_title} — ${ad.project_title}`;
+    const errorEl = document.getElementById('sendRequestError');
+    if (errorEl) errorEl.style.display = 'none';
+    const messageInput = document.getElementById('sendRequestMessage');
+    if (messageInput) messageInput.value = '';
+    openModal('sendRequestModal');
+}
 
 // ---------------------------------------------------------------------
 // Filter catalog (skills / categories / mastery levels) — shared by both modules
@@ -95,11 +159,13 @@ function renderAdCard(ad) {
         <div class="skill-tags">${skillTags}</div>
         <div class="card-footer">
             <span class="duration">⏱ ${ad.duration_days} days</span>
-            <button class="apply-btn" disabled title="Coming soon">Send Request</button>
+            <button class="apply-btn" type="button" data-ad-id="${ad.id}">Send Request</button>
         </div>
     `;
-    // TODO: once the collaboration app's "create ticket" endpoint is
-    // confirmed, wire the button above instead of leaving it disabled.
+
+    const applyBtn = card.querySelector('.apply-btn');
+    applyBtn.addEventListener('click', () => onSendRequestClick(ad));
+
     return card;
 }
 
