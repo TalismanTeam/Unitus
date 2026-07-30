@@ -57,6 +57,11 @@
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
     </nav>
 
     <div class="page-header">
