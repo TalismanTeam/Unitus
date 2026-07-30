@@ -29,6 +29,36 @@ def serialize_privacy_settings(settings_obj):
     }
 
 
+def serialize_project_membership(member, *, include_visibility_flag=False):
+    """
+    One row for the "Job Ads" list on a profile — a ProjectMember joined
+    through to its Project/ProjectRole/JobAd.
+
+    `include_visibility_flag` is True only when serializing for the owner
+    (serialize_me): the owner needs `visible_on_profile` so the Edit popup
+    knows which toggle state to preselect. It's omitted for the public
+    version since hidden rows are filtered out before they ever get here,
+    so the flag would always read True and add nothing.
+    """
+    project = member.project
+    role = member.project_role
+    job_ad = getattr(role, "jobad", None) if role else None
+
+    data = {
+        "membership_id": member.id,
+        "project_id": project.id,
+        "project_title": project.title,
+        "role_title": role.role_title if role else None,
+        "job_ad_id": job_ad.id if job_ad else None,
+        "job_ad_status": job_ad.status if job_ad else None,
+        "project_state": project.state,
+        "member_status": member.member_status,
+    }
+    if include_visibility_flag:
+        data["visible_on_profile"] = member.visible_on_profile
+    return data
+
+
 def serialize_user_skill(user_skill):
     return {
         "id": user_skill.id,
@@ -49,6 +79,11 @@ def _get_privacy_settings(user):
 def serialize_me(user):
     """Full private profile — only ever returned to the user themselves."""
     skills = user.userskill_set.select_related("skill", "skill__category").all()
+    memberships = (
+        user.projectmember_set
+        .filter(member_status="ACTIVE")
+        .select_related("project", "project_role", "project_role__jobad")
+    )
     return {
         "id": user.id,
         "username": user.username,
@@ -67,6 +102,10 @@ def serialize_me(user):
         "avatar": serialize_avatar(user.avatar_icon),
         "privacy_settings": serialize_privacy_settings(_get_privacy_settings(user)),
         "skills": [serialize_user_skill(s) for s in skills],
+        "job_ads": [
+            serialize_project_membership(m, include_visibility_flag=True)
+            for m in memberships
+        ],
     }
 
 
@@ -86,6 +125,13 @@ def serialize_public_profile(user):
     active_projects_count = ProjectMember.objects.filter(
         user=user, member_status="ACTIVE"
     ).exclude(project__state="TERMINATED").count()
+
+    visible_memberships = (
+        ProjectMember.objects.filter(
+            user=user, member_status="ACTIVE", visible_on_profile=True
+        )
+        .select_related("project", "project_role", "project_role__jobad")
+    )
 
     avg = Review.objects.filter(reviewee=user).aggregate(avg=Avg("rating"))["avg"]
 
@@ -108,6 +154,7 @@ def serialize_public_profile(user):
         "skills": [serialize_user_skill(s) for s in skills],
         "active_projects_count": active_projects_count,
         "avg_rating": round(avg, 2) if avg is not None else None,
+        "job_ads": [serialize_project_membership(m) for m in visible_memberships],
     }
 
 

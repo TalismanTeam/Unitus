@@ -33,6 +33,7 @@ from .serialization import (
     serialize_privacy_settings,
     serialize_user_skill,
     serialize_project_summary,
+    serialize_project_membership,
     serialize_report,
 )
 
@@ -299,6 +300,42 @@ def privacy_settings_view(request):
 
     settings_obj.save(update_fields=PRIVACY_PATCHABLE_FIELDS)
     return JsonResponse(serialize_privacy_settings(settings_obj))
+
+
+# ---------------------------------------------------------------------------
+# GET/PATCH /users/me/memberships/:id/visibility
+#
+# Powers the "Job Ads" Edit popup on your own profile: lets you hide/show
+# an individual role (ProjectMember row) from your PUBLIC profile only.
+# Doesn't touch the project, the team, or your own view of it.
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def membership_visibility_view(request, member_id):
+    from projects.models import ProjectMember
+
+    # request.user filter here is the ownership check — a 404 (rather than
+    # 403) for someone else's membership id, same style as the rest of
+    # this file, and it avoids confirming/denying that the id exists at all.
+    member = get_object_or_404(
+        ProjectMember.objects.select_related("project", "project_role", "project_role__jobad"),
+        pk=member_id, user=request.user,
+    )
+
+    if request.method == "GET":
+        return JsonResponse(serialize_project_membership(member, include_visibility_flag=True))
+
+    data = parse_json(request)
+    if data is None:
+        return bad_request("invalid JSON body")
+
+    if "visible_on_profile" not in data or not isinstance(data["visible_on_profile"], bool):
+        return bad_request("visible_on_profile (boolean) is required")
+
+    member.visible_on_profile = data["visible_on_profile"]
+    member.save(update_fields=["visible_on_profile"])
+    return JsonResponse(serialize_project_membership(member, include_visibility_flag=True))
 
 
 # ---------------------------------------------------------------------------
