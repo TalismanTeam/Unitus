@@ -46,12 +46,22 @@
           <p class="hint" style="margin: 0;">Start a new project and recruit a team.</p>
         </a>
 
-        <a href="{% url 'projects:browse' %}"
+        <a href="{% url 'recommendation:recommend-projects-page' %}"
            style="flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; text-decoration: none; text-align: center; color: var(--text);">
           <h3 style="margin: 0 0 8px;">Recommended Projects</h3>
-          <p class="hint" style="margin: 0;">Open roles matched to your skills.</p>
+          <p class="hint" style="margin: 0;">Open roles matched to your skills — apply in one click.</p>
+        </a>
+
+        <a href="{% url 'recommendation:find-candidates-page' %}"
+           style="flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; text-decoration: none; text-align: center; color: var(--text);">
+          <h3 style="margin: 0 0 8px;">Find Candidates</h3>
+          <p class="hint" style="margin: 0;">PM tool: get suggested users for a role you're recruiting for.</p>
         </a>
       </div>
+
+      <p class="hint" style="margin-top: 10px;">
+        Looking for something specific instead? <a href="{% url 'projects:browse' %}" style="color: var(--accent);">Search all job ads and users</a>.
+      </p>
     </main>
   </div>
 </body>
