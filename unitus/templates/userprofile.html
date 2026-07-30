@@ -50,11 +50,15 @@
 <body style="direction: ltr !important; text-align: left !important;">
   <div class="container" style="direction: ltr !important;">
     <nav>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>  
-      <a href="{% url 'projects:home' %}">Projects</a>
-      <a href="{% url 'search:search_page' %}">Search</a>
-      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
-      <a href="{% url 'chat:inbox' %}">Chat</a>
+      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>
+      {% if user.system_role == 'ADMIN' %}
+        <a href="{% url 'accounts:admin-dashboard' %}">Admin Panel</a>
+      {% else %}
+        <a href="{% url 'projects:home' %}">Projects</a>
+        <a href="{% url 'search:search_page' %}">Search</a>
+        <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+        <a href="{% url 'chat:inbox' %}">Chat</a>
+      {% endif %}
 
       <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
         {% csrf_token %}
