@@ -167,3 +167,38 @@ This happens because MySQL, by default, restricts user accounts from creating tr
    # For CMD:
    set USE_ADMIN_DB=1 && python unitus/manage.py migrate && set USE_ADMIN_DB=
    ```
+
+--- 
+
+## Demo Data
+
+To populate the database with realistic demo data for a live presentation
+(users, projects in every state, job ads, reviews, and unlocked honors),
+run:
+
+```bash
+python manage.py migrate          # make sure all migrations (incl. skills & reviews seed data) are applied
+python manage.py seed_demo_data
+```
+
+This creates 18 demo users plus one admin account, spread across 10
+projects covering all four project states (Recruiting, In Progress,
+Suspended, Terminated with every termination reason), including two
+successfully completed projects with peer reviews - one of which is
+specifically set up so a user unlocks an honor badge, to demonstrate
+that feature live.
+
+**All demo accounts use the password:** `password123`
+
+A few accounts worth logging in as during a demo:
+- `sara_ahmadi` - has multiple completed projects, a high average rating, and two unlocked honor badges.
+- `kian_ebrahimi` - a project manager (management-only, no technical role) with an active recruiting project.
+- `admin_demo` - the admin/superuser account, for the admin panel.
+
+Re-running `python manage.py seed_demo_data` wipes and recreates all demo
+data from scratch, so it's safe to run again right before a presentation.
+Use `--no-reset` if you want to add on top of existing data instead.
+
+```bash
+python manage.py seed_demo_data --no-reset
+```
