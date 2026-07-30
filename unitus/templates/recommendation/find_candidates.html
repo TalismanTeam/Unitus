@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'css/project_custom.css' %}">
+  <title>Unitas - Find Candidates</title>
+  <style>
+    .match-score-badge {
+      display: inline-block;
+      background: var(--surface-2);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .candidate-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .candidate-identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .candidate-identity:hover .candidate-name { color: var(--accent); }
+    .candidate-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--border); color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; flex-shrink: 0;
+    }
+    .candidate-name { font-weight: bold; transition: 0.2s; }
+    .candidate-username { color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 900px;">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+    </nav>
+
+    <div class="page-header">
+      <div>
+        <h2 style="margin: 0;">Find Candidates</h2>
+        <p class="hint" style="margin: 4px 0 0;">Pick one of your projects and a role — we'll suggest matching users.</p>
+      </div>
+      <a href="{% url 'projects:home' %}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">&larr; Back to Projects</a>
+    </div>
+
+    {{ pm_projects_data|json_script:"pmProjectsData" }}
+
+    {% if pm_projects_data %}
+      <form id="findCandidatesForm" onsubmit="return false;" style="display:flex; gap:10px; align-items:flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <label for="projectSelect">Project (you manage)</label>
+          <select id="projectSelect"></select>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+          <label for="roleSelect">Role</label>
+          <select id="roleSelect"></select>
+        </div>
+        <button type="button" id="findCandidatesBtn" style="margin-bottom: 20px;">Find Candidates</button>
+      </form>
+    {% else %}
+      <div class="modern-card">
+        <p class="hint" style="margin: 0;">
+          You don't have any open roles to recruit for right now. Create a project and add a role
+          — or make sure an existing role's job ad is still open — to use candidate suggestions.
+        </p>
+      </div>
+    {% endif %}
+
+    <div id="candidatesStatus" class="hint" style="margin: 15px 0 10px;"></div>
+    <div id="candidatesList"></div>
+  </div>
+
+  <!-- Send Invitation modal -->
+  <div class="modal-overlay" id="sendInviteModal">
+    <div class="modal-box">
+      <h3>Send Invitation</h3>
+      <p class="hint" id="sendInviteTarget" style="margin-bottom: 15px;"></p>
+
+      <label>Message to the candidate (optional)</label>
+      <textarea id="sendInviteMessage" rows="4" placeholder="Let them know why you'd like them on the team..."></textarea>
+
+      <p id="sendInviteError" class="hint" style="color: #ef4444; display: none;"></p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" onclick="closeModal('sendInviteModal')">Cancel</button>
+        <button type="button" id="sendInviteConfirmBtn">Send Invitation</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('visible');
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('visible');
+    }
+  </script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/recommendation.js' %}"></script>
+</body>
+</html>
