@@ -16,6 +16,8 @@ def serialize_job_ad(ad):
 
     return {
         'id': ad.id,
+        'project_id': project.id,
+        'project_role_id': role.id,
         'role_title': role.role_title,
         'role_description': role.role_description,
         'project_title': project.title,
