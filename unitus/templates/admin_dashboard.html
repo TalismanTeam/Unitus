@@ -1,0 +1,500 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <title>Unitas - Admin Panel</title>
+  <style>
+    body {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+
+    nav {
+      direction: ltr !important;
+      display: flex;
+      justify-content: flex-start;
+      gap: 15px;
+    }
+
+    input, select, textarea {
+      direction: ltr !important;
+      text-align: left !important;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .admin-tab {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .admin-tab.active {
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+    }
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    .admin-filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .admin-filters input, .admin-filters select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    table.admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.admin-table th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    table.admin-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    table.admin-table tr:hover td { background: var(--surface-2); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-pending { background: rgba(255,180,84,0.15); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-resolved, .badge-active { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid #4ade80; }
+    .badge-dismissed { background: rgba(148,163,184,0.15); color: var(--muted); border: 1px solid var(--muted); }
+    .badge-suspended { background: rgba(255,180,84,0.15); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-banned { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; }
+    .badge-reports { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid #ef4444; cursor: pointer; }
+    .badge-reports.zero { background: transparent; color: var(--muted); border: 1px solid var(--border); cursor: default; }
+
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .row-actions button {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .row-actions button.danger { border-color: #ef4444; color: #ef4444; background: transparent; }
+    .row-actions button.warn { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .row-actions button.ok { border-color: #4ade80; color: #4ade80; background: transparent; }
+
+    #adminStatusMsg { font-size: 13px; margin-bottom: 12px; display: none; }
+    #adminStatusMsg.error { color: #ef4444; }
+    #adminStatusMsg.success { color: #4ade80; }
+  </style>
+</head>
+<body style="direction: ltr !important; text-align: left !important;">
+  <div class="container" style="direction: ltr !important;">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'accounts:admin-dashboard' %}" class="active">Admin Panel</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
+      <h2 style="margin: 0 0 4px; color: var(--text);">Admin Panel</h2>
+      <p style="margin: 0 0 15px; color: var(--muted); font-size: 13px;">Reports, user account status, and the audit log.</p>
+
+      <div id="adminStatusMsg"></div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-panel="reportsPanel">Reports</button>
+        <button class="admin-tab" data-panel="usersPanel">Users</button>
+        <button class="admin-tab" data-panel="auditPanel">Audit Log</button>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="reportsPanel" class="admin-panel active">
+        <div class="admin-filters">
+          <select id="reportStatusFilter">
+            <option value="">All statuses</option>
+            <option value="PENDING_REVIEW">Pending review</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="DISMISSED">Dismissed</option>
+          </select>
+          <input id="reportUserFilter" type="number" placeholder="Filter by reported user ID" style="width: 220px;">
+          <button id="reportFilterClearBtn" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer;">Clear</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table" id="reportsTable">
+            <thead>
+              <tr>
+                <th>ID</th><th>Reported User</th><th>Reporter</th><th>Reason</th>
+                <th>Description</th><th>Status</th><th>Created</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="8" style="color: var(--muted);">Loading reports...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div id="usersPanel" class="admin-panel">
+        <div class="admin-filters">
+          <input id="userSearchInput" type="text" placeholder="Search username, name, or email" style="width: 240px;">
+          <select id="userStatusFilter">
+            <option value="">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="BANNED">Banned</option>
+          </select>
+          <select id="userRoleFilter">
+            <option value="">All roles</option>
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          <button id="userFilterBtn" style="background: var(--accent); color: #1a1200; border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;">Search</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>ID</th><th>Username</th><th>Name</th><th>Email</th><th>Role</th>
+                <th>Status</th><th>Reports</th><th>Joined</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="9" style="color: var(--muted);">Loading users...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div id="auditPanel" class="admin-panel">
+        <div class="admin-filters">
+          <select id="auditEntityFilter">
+            <option value="">All entities</option>
+            <option value="Report">Report</option>
+            <option value="User">User</option>
+            <option value="Project">Project</option>
+            <option value="ProjectRole">Project Role</option>
+            <option value="ProjectMember">Project Member</option>
+            <option value="JobAd">Job Ad</option>
+          </select>
+          <select id="auditActionFilter">
+            <option value="">All actions</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+            <option value="STATUS_CHANGE">Status change</option>
+          </select>
+          <button id="auditFilterBtn" style="background: var(--accent); color: #1a1200; border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;">Filter</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table" id="auditTable">
+            <thead>
+              <tr><th>Time</th><th>Entity</th><th>Action</th><th>Performed By</th><th>Details</th></tr>
+            </thead>
+            <tbody><tr><td colspan="5" style="color: var(--muted);">Loading audit log...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+    const CSRF_TOKEN = getCookie('csrftoken');
+
+    async function apiFetch(url, options = {}) {
+      const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+      if (options.method && options.method !== 'GET') {
+        headers['X-CSRFToken'] = CSRF_TOKEN;
+      }
+      const res = await fetch(url, Object.assign({}, options, { headers }));
+      let data = null;
+      try { data = await res.json(); } catch (e) { /* no body */ }
+      if (!res.ok) {
+        const detail = (data && (data.detail || data.error)) || `Request failed (${res.status})`;
+        throw new Error(detail);
+      }
+      return data;
+    }
+
+    function showStatus(message, isError) {
+      const el = document.getElementById('adminStatusMsg');
+      el.textContent = message;
+      el.className = isError ? 'error' : 'success';
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    // ---- Tabs ----
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.panel).classList.add('active');
+      });
+    });
+
+    function goToUsersTab(searchTerm) {
+      document.querySelector('.admin-tab[data-panel="usersPanel"]').click();
+      if (searchTerm) {
+        document.getElementById('userSearchInput').value = searchTerm;
+        loadUsers();
+      }
+    }
+
+    function goToReportsTabForUser(userId) {
+      document.querySelector('.admin-tab[data-panel="reportsPanel"]').click();
+      document.getElementById('reportUserFilter').value = userId;
+      loadReports();
+    }
+
+    // =====================================================================
+    // REPORTS
+    // =====================================================================
+    const REASON_LABELS = {
+      INACTIVITY: 'Inactivity',
+      INSULTING: 'Insulting / Inappropriate',
+      FAKE_PROJECT: 'Fake Project',
+      OTHER: 'Other',
+    };
+
+    async function loadReports() {
+      const tbody = document.querySelector('#reportsTable tbody');
+      tbody.innerHTML = '<tr><td colspan="8" style="color: var(--muted);">Loading reports...</td></tr>';
+
+      const status = document.getElementById('reportStatusFilter').value;
+      const userId = document.getElementById('reportUserFilter').value;
+      const params = new URLSearchParams();
+      if (status) params.set('status', status);
+      if (userId) params.set('reported_user_id', userId);
+
+      try {
+        const data = await apiFetch(`/moderation/admin/reports?${params.toString()}`);
+        const reports = data.reports || [];
+        if (!reports.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="color: var(--muted);">No reports found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = reports.map(r => {
+          const statusClass = r.status === 'PENDING_REVIEW' ? 'badge-pending'
+            : r.status === 'RESOLVED' ? 'badge-resolved' : 'badge-dismissed';
+          const actions = [];
+          if (r.status === 'PENDING_REVIEW') {
+            actions.push(`<button class="ok" onclick="resolveReport(${r.id}, 'resolve')">Resolve</button>`);
+            actions.push(`<button onclick="resolveReport(${r.id}, 'dismiss')">Dismiss</button>`);
+          }
+          actions.push(`<button class="danger" onclick="quickBan(${r.reported_user.id}, '${escapeHtml(r.reported_user.username)}')">Ban User</button>`);
+          actions.push(`<button onclick="goToUsersTab('${escapeHtml(r.reported_user.username)}')">View User</button>`);
+          return `<tr>
+            <td>${r.id}</td>
+            <td>#${r.reported_user.id} ${escapeHtml(r.reported_user.username)}</td>
+            <td>${r.reporter ? '#' + r.reporter.id + ' ' + escapeHtml(r.reporter.username) : '(deleted user)'}</td>
+            <td>${REASON_LABELS[r.reason] || escapeHtml(r.reason)}</td>
+            <td style="max-width: 240px; white-space: normal;">${escapeHtml(r.description) || '<span style="color: var(--muted);">-</span>'}</td>
+            <td><span class="badge ${statusClass}">${r.status.replace('_', ' ')}</span></td>
+            <td>${formatDate(r.created_at)}</td>
+            <td><div class="row-actions">${actions.join('')}</div></td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;">${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    async function resolveReport(reportId, action) {
+      try {
+        await apiFetch(`/moderation/admin/reports/${reportId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ action }),
+        });
+        showStatus(`Report #${reportId} ${action === 'resolve' ? 'resolved' : 'dismissed'}.`, false);
+        loadReports();
+      } catch (e) {
+        showStatus(e.message, true);
+      }
+    }
+
+    async function quickBan(userId, username) {
+      if (!confirm(`Ban ${username} (user #${userId})? This sets their account status to BANNED.`)) return;
+      try {
+        await apiFetch(`/panel/users/${userId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ account_status: 'BANNED' }),
+        });
+        showStatus(`${username} has been banned.`, false);
+        loadReports();
+      } catch (e) {
+        showStatus(e.message, true);
+      }
+    }
+
+    document.getElementById('reportStatusFilter').addEventListener('change', loadReports);
+    document.getElementById('reportUserFilter').addEventListener('change', loadReports);
+    document.getElementById('reportFilterClearBtn').addEventListener('click', () => {
+      document.getElementById('reportStatusFilter').value = '';
+      document.getElementById('reportUserFilter').value = '';
+      loadReports();
+    });
+
+    // =====================================================================
+    // USERS
+    // =====================================================================
+    async function loadUsers() {
+      const tbody = document.querySelector('#usersTable tbody');
+      tbody.innerHTML = '<tr><td colspan="9" style="color: var(--muted);">Loading users...</td></tr>';
+
+      const search = document.getElementById('userSearchInput').value.trim();
+      const status = document.getElementById('userStatusFilter').value;
+      const role = document.getElementById('userRoleFilter').value;
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (status) params.set('account_status', status);
+      if (role) params.set('system_role', role);
+
+      try {
+        const users = await apiFetch(`/panel/users?${params.toString()}`);
+        if (!users.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="color: var(--muted);">No users found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => {
+          const statusClass = u.account_status === 'ACTIVE' ? 'badge-active'
+            : u.account_status === 'SUSPENDED' ? 'badge-suspended' : 'badge-banned';
+          const reportsBadgeClass = u.reports_received_count > 0 ? 'badge-reports' : 'badge-reports zero';
+          const actions = [];
+          if (u.account_status !== 'SUSPENDED') {
+            actions.push(`<button class="warn" onclick="setUserStatus(${u.id}, 'SUSPENDED', '${escapeHtml(u.username)}')">Suspend</button>`);
+          }
+          if (u.account_status !== 'BANNED') {
+            actions.push(`<button class="danger" onclick="setUserStatus(${u.id}, 'BANNED', '${escapeHtml(u.username)}')">Ban</button>`);
+          }
+          if (u.account_status !== 'ACTIVE') {
+            actions.push(`<button class="ok" onclick="setUserStatus(${u.id}, 'ACTIVE', '${escapeHtml(u.username)}')">Reactivate</button>`);
+          }
+          return `<tr>
+            <td>${u.id}</td>
+            <td>${escapeHtml(u.username)}</td>
+            <td>${escapeHtml(u.first_name)} ${escapeHtml(u.last_name)}</td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>${escapeHtml(u.system_role)}</td>
+            <td><span class="badge ${statusClass}">${escapeHtml(u.account_status)}</span></td>
+            <td><span class="badge ${reportsBadgeClass}" onclick="${u.reports_received_count > 0 ? `goToReportsTabForUser(${u.id})` : ''}">${u.reports_received_count}</span></td>
+            <td>${formatDate(u.created_at)}</td>
+            <td><div class="row-actions">${actions.join('')}</div></td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;">${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    async function setUserStatus(userId, newStatus, username) {
+      const verb = newStatus === 'BANNED' ? 'ban' : newStatus === 'SUSPENDED' ? 'suspend' : 'reactivate';
+      if (!confirm(`Are you sure you want to ${verb} ${username}?`)) return;
+      try {
+        await apiFetch(`/panel/users/${userId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ account_status: newStatus }),
+        });
+        showStatus(`${username} is now ${newStatus}.`, false);
+        loadUsers();
+      } catch (e) {
+        showStatus(e.message, true);
+      }
+    }
+
+    document.getElementById('userFilterBtn').addEventListener('click', loadUsers);
+    document.getElementById('userSearchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadUsers();
+    });
+
+    // =====================================================================
+    // AUDIT LOG
+    // =====================================================================
+    async function loadAuditLog() {
+      const tbody = document.querySelector('#auditTable tbody');
+      tbody.innerHTML = '<tr><td colspan="5" style="color: var(--muted);">Loading audit log...</td></tr>';
+
+      const entityType = document.getElementById('auditEntityFilter').value;
+      const action = document.getElementById('auditActionFilter').value;
+      const params = new URLSearchParams();
+      if (entityType) params.set('entity_type', entityType);
+      if (action) params.set('action', action);
+
+      try {
+        const data = await apiFetch(`/moderation/admin/audit-log?${params.toString()}`);
+        const entries = data.audit_log || [];
+        if (!entries.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color: var(--muted);">No audit log entries yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = entries.map(e => `<tr>
+          <td>${formatDate(e.timestamp)}</td>
+          <td>${escapeHtml(e.entity_type)} #${e.entity_id}</td>
+          <td>${escapeHtml(e.action).replace('_', ' ')}</td>
+          <td>${e.performed_by ? escapeHtml(e.performed_by.username) : '<span style="color: var(--muted);">system</span>'}</td>
+          <td>${escapeHtml(e.details) || ''}</td>
+        </tr>`).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;">${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    document.getElementById('auditFilterBtn').addEventListener('click', loadAuditLog);
+
+    // ---- Init ----
+    loadReports();
+    loadUsers();
+    loadAuditLog();
+  </script>
+  <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

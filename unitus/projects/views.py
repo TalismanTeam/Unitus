@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
+from moderation.audit import log_action
 from skills.models import UserSkill
 
 from .forms import (
@@ -78,6 +79,13 @@ def project_create(request):
             project = form.save(commit=False)
             project.pm = request.user
             project.save()
+            log_action(
+                entity_type='Project',
+                entity_id=project.pk,
+                action='CREATE',
+                performed_by=request.user,
+                details=f'Created project "{project.title}"',
+            )
             messages.success(request, 'Project created. Now add at least one role.')
             return redirect('projects:project_add_role', pk=project.pk)
     else:
@@ -119,7 +127,22 @@ def project_add_role(request, pk):
                     role_skill.role = role
                     role_skill.save()
 
-            JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
+            job_ad = JobAd.objects.create(project=project, project_role=role, status=JobAd.Status.OPEN)
+
+            log_action(
+                entity_type='ProjectRole',
+                entity_id=role.pk,
+                action='CREATE',
+                performed_by=request.user,
+                details=f'Added role "{role.role_title}" to project "{project.title}"',
+            )
+            log_action(
+                entity_type='JobAd',
+                entity_id=job_ad.pk,
+                action='CREATE',
+                performed_by=request.user,
+                details=f'Job ad published for role "{role.role_title}" on "{project.title}"',
+            )
 
             if wants_owner_role:
                 pm_membership.project_role = role
@@ -194,6 +217,16 @@ def project_state_change(request, pk):
                 JobAd.objects.filter(project=updated_project, status=JobAd.Status.OPEN).update(
                     status=JobAd.Status.CANCELLED
                 )
+            details = f'State changed from {old_state} to {updated_project.state}'
+            if updated_project.termination_reason:
+                details += f' (reason: {updated_project.termination_reason})'
+            log_action(
+                entity_type='Project',
+                entity_id=updated_project.pk,
+                action='STATUS_CHANGE',
+                performed_by=request.user,
+                details=details,
+            )
             messages.success(request, 'Project status updated.')
             return redirect('projects:project_workspace', pk=project.pk)
     else:
@@ -214,6 +247,13 @@ def project_remove_member(request, pk, member_id):
         member.save(update_fields=['member_status'])
         if member.project_role:
             sync_job_ad_status_for_role(member.project_role)
+        log_action(
+            entity_type='ProjectMember',
+            entity_id=member.pk,
+            action='STATUS_CHANGE',
+            performed_by=request.user,
+            details=f'Removed {member.user.username} from project "{project.title}"',
+        )
         messages.success(request, f'{member.user.username} has been removed from the project.')
         return redirect('projects:project_workspace', pk=project.pk)
 
@@ -250,6 +290,13 @@ def project_transfer_ownership(request, pk):
                 project=project, user=old_pm,
                 defaults={'member_status': ProjectMember.MemberStatus.ACTIVE},
             )
+            log_action(
+                entity_type='Project',
+                entity_id=project.pk,
+                action='UPDATE',
+                performed_by=request.user,
+                details=f'Ownership transferred from {old_pm.username} to {new_owner.username}',
+            )
             messages.success(request, f'Ownership transferred to {new_owner.username}.')
             return redirect('projects:project_workspace', pk=project.pk)
     else:
@@ -268,6 +315,13 @@ def project_edit(request, pk):
         form = ProjectEditForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
+            log_action(
+                entity_type='Project',
+                entity_id=project.pk,
+                action='UPDATE',
+                performed_by=request.user,
+                details=f'Edited details for project "{project.title}"',
+            )
             messages.success(request, 'Project details updated successfully.')
             return redirect('projects:project_workspace', pk=project.pk)
     else:
@@ -283,7 +337,15 @@ def project_delete(request, pk):
         raise PermissionDenied('Only the project manager can delete this project.')
 
     if request.method == 'POST':
+        project_id, project_title = project.pk, project.title
         project.delete()
+        log_action(
+            entity_type='Project',
+            entity_id=project_id,
+            action='DELETE',
+            performed_by=request.user,
+            details=f'Deleted project "{project_title}"',
+        )
         messages.success(request, 'Project deleted successfully.')
         return redirect('accounts:my-projects')
 
@@ -313,6 +375,13 @@ def project_edit_role(request, pk, role_id):
             obj.delete()
 
         sync_job_ad_status_for_role(role)
+        log_action(
+            entity_type='ProjectRole',
+            entity_id=role.pk,
+            action='UPDATE',
+            performed_by=request.user,
+            details=f'Edited role "{role.role_title}" on project "{project.title}"',
+        )
         messages.success(request, f'Role "{role.role_title}" updated successfully.')
         return redirect('projects:project_workspace', pk=project.pk)
 
@@ -334,7 +403,15 @@ def project_delete_role(request, pk, role_id):
 
     if request.method == 'POST':
         JobAd.objects.filter(project_role=role, status=JobAd.Status.OPEN).update(status=JobAd.Status.CANCELLED)
+        role_id, role_title = role.pk, role.role_title
         role.delete()
+        log_action(
+            entity_type='ProjectRole',
+            entity_id=role_id,
+            action='DELETE',
+            performed_by=request.user,
+            details=f'Deleted role "{role_title}" from project "{project.title}"',
+        )
         messages.success(request, 'Role deleted successfully.')
         return redirect('projects:project_workspace', pk=project.pk)
 
@@ -364,6 +441,14 @@ def project_resign(request, pk):
 
             if member.project_role:
                 sync_job_ad_status_for_role(member.project_role)
+
+            log_action(
+                entity_type='ProjectMember',
+                entity_id=member.pk,
+                action='STATUS_CHANGE',
+                performed_by=request.user,
+                details=f'{request.user.username} resigned from project "{project.title}"',
+            )
 
             messages.success(request, 'You have resigned from the project.')
             return redirect('accounts:my-projects')

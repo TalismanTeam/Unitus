@@ -9,9 +9,11 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User, Avatar, UserPrivacySettings
+from django.db.models import Count, Q
 from skills.models import Skill, UserSkill
 from skills.choices import MasteryLevel
-from moderation.models import Report
+from moderation.audit import log_action
+from moderation.models import AuditLog, Report
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -455,6 +457,170 @@ def report_user_view(request, id):
         status=Report.Status.PENDING_REVIEW,
     )
     return JsonResponse(serialize_report(report), status=201)
+
+
+# ---------------------------------------------------------------------------
+# Admin panel
+#
+# Reports themselves are served by moderation.views (list_reports /
+# resolve_report / list_audit_log) — everything below is the user-management
+# side: browsing users, looking at one user's report history, and changing
+# account_status (the ban/suspend/reactivate action). Every view here checks
+# admin status itself since these aren't gated by Django's own is_staff/admin
+# site, they're plain function views like the rest of this file.
+# ---------------------------------------------------------------------------
+
+def _require_admin(request):
+    if request.user.system_role != User.SystemRole.ADMIN:
+        return JsonResponse({"detail": "Admin access required."}, status=403)
+    return None
+
+
+def _serialize_user_admin(user, *, reports_received_count=None):
+    return {
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone_number": user.phone_number,
+        "gender": user.gender,
+        "birth_year": user.birth_year,
+        "location": user.location,
+        "system_role": user.system_role,
+        "account_status": user.account_status,
+        "is_open_to_work": user.is_open_to_work,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat(),
+        "reports_received_count": reports_received_count,
+    }
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_list_users_view(request):
+    """
+    GET /admin/users?search=<optional>&account_status=<optional>&system_role=<optional>
+    Admin only. Returns the 200 most recently created matching users,
+    newest first, each annotated with how many reports they've received —
+    that count is what "especially the ones who are reported" hangs off of
+    in the admin panel's users table.
+    """
+    error = _require_admin(request)
+    if error:
+        return error
+
+    qs = User.objects.annotate(reports_received_count=Count("reports_received"))
+
+    search = request.GET.get("search")
+    if search:
+        qs = qs.filter(
+            Q(username__icontains=search)
+            | Q(email__icontains=search)
+            | Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+        )
+
+    status = request.GET.get("account_status")
+    if status:
+        if status not in User.AccountStatus.values:
+            return bad_request(f"account_status must be one of {User.AccountStatus.values}")
+        qs = qs.filter(account_status=status)
+
+    role = request.GET.get("system_role")
+    if role:
+        if role not in User.SystemRole.values:
+            return bad_request(f"system_role must be one of {User.SystemRole.values}")
+        qs = qs.filter(system_role=role)
+
+    qs = qs.order_by("-created_at")[:200]
+
+    return JsonResponse(
+        [_serialize_user_admin(u, reports_received_count=u.reports_received_count) for u in qs],
+        safe=False,
+    )
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_user_detail_view(request, id):
+    """
+    GET /admin/users/:id
+    Admin only. One user plus their full report history, so an admin can
+    see why someone's been reported before deciding to suspend/ban them.
+    """
+    error = _require_admin(request)
+    if error:
+        return error
+
+    user = get_object_or_404(User, pk=id)
+    reports = (
+        Report.objects
+        .filter(reported_user=user)
+        .select_related("reporter", "reported_user", "reviewed_by_admin")
+        .order_by("-created_at")
+    )
+
+    data = _serialize_user_admin(user, reports_received_count=reports.count())
+    data["reports_received"] = [serialize_report(r, for_admin=True) for r in reports]
+    return JsonResponse(data)
+
+
+@login_required
+@require_http_methods(["PATCH"])
+def admin_user_status_view(request, id):
+    """
+    PATCH /admin/users/:id/status
+    Body: {"account_status": "ACTIVE"|"SUSPENDED"|"BANNED"}
+    Admin only. This is the ban/suspend/reactivate action. Logs the change
+    to AuditLog (entity_type="User") so it shows up in the admin panel's
+    audit log tab.
+    """
+    error = _require_admin(request)
+    if error:
+        return error
+
+    user = get_object_or_404(User, pk=id)
+    if user.pk == request.user.pk:
+        return bad_request("You can't change your own account status here.")
+
+    data = parse_json(request)
+    if data is None or "account_status" not in data:
+        return bad_request("account_status is required")
+
+    new_status = data["account_status"]
+    if new_status not in User.AccountStatus.values:
+        return bad_request(f"account_status must be one of {User.AccountStatus.values}")
+
+    old_status = user.account_status
+    if new_status == old_status:
+        return bad_request(f"User is already {old_status}.")
+
+    user.account_status = new_status
+    user.save(update_fields=["account_status"])
+
+    log_action(
+        entity_type="User",
+        entity_id=user.id,
+        action=AuditLog.Action.STATUS_CHANGE,
+        performed_by=request.user,
+        details=f"account_status: {old_status} -> {new_status}",
+    )
+
+    return JsonResponse(_serialize_user_admin(user))
+
+
+@login_required
+def admin_dashboard_view(request):
+    """
+    /admin/ -> renders the admin panel page (reports / users / audit log
+    tabs, all populated client-side by the endpoints above and by
+    moderation.views). Non-admins get bounced back to their own profile.
+    """
+    if request.user.system_role != User.SystemRole.ADMIN:
+        messages.error(request, "Admin access required.")
+        return redirect("accounts:profile-page")
+    return render(request, "admin_dashboard.html")
 
 
 def register_view(request):

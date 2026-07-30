@@ -30,3 +30,19 @@ def serialize_report(report, *, for_admin=False):
         )
 
     return data
+
+
+def serialize_audit_log(entry):
+    """Dict-builder for an AuditLog row. Admin-only data by nature."""
+    return {
+        'id': entry.id,
+        'entity_type': entry.entity_type,
+        'entity_id': entry.entity_id,
+        'action': entry.action,
+        'details': entry.details,
+        'performed_by': (
+            {'id': entry.performed_by_id, 'username': entry.performed_by.username}
+            if entry.performed_by_id else None
+        ),
+        'timestamp': entry.timestamp.isoformat(),
+    }

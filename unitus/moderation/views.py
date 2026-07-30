@@ -5,8 +5,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
-from .models import Report
-from .serialization import serialize_report
+from .audit import log_action
+from .models import AuditLog, Report
+from .serialization import serialize_audit_log, serialize_report
 
 
 def _parse_json_body(request):
@@ -73,6 +74,15 @@ def create_report(request):
         reason=reason,
         description=description or None,
     )
+
+    log_action(
+        entity_type='Report',
+        entity_id=report.id,
+        action=AuditLog.Action.CREATE,
+        performed_by=request.user,
+        details=f'reason={report.reason}, against user #{reported_user.id} ({reported_user.username})',
+    )
+
     return JsonResponse(serialize_report(report), status=201)
 
 
@@ -80,7 +90,7 @@ def create_report(request):
 @require_http_methods(['GET'])
 def list_reports(request):
     """
-    GET /moderation/admin/reports?status=<optional>
+    GET /moderation/admin/reports?status=<optional>&reported_user_id=<optional>
     Admin only.
     """
     error = _require_admin(request)
@@ -100,6 +110,14 @@ def list_reports(request):
                 'status must be one of: %s' % ', '.join(Report.Status.values), 400
             )
         reports = reports.filter(status=status)
+
+    reported_user_id = request.GET.get('reported_user_id')
+    if reported_user_id:
+        try:
+            reported_user_id = int(reported_user_id)
+        except (TypeError, ValueError):
+            return _error('reported_user_id must be an integer.', 400)
+        reports = reports.filter(reported_user_id=reported_user_id)
 
     data = [serialize_report(r, for_admin=True) for r in reports]
     return JsonResponse({'reports': data})
@@ -137,8 +155,53 @@ def resolve_report(request, report_id):
     if report.status != Report.Status.PENDING_REVIEW:
         return _error('This report has already been reviewed.', 400)
 
+    old_status = report.status
     report.status = Report.Status.RESOLVED if action == 'resolve' else Report.Status.DISMISSED
     report.reviewed_by_admin = request.user
     report.save(update_fields=['status', 'reviewed_by_admin'])
 
+    log_action(
+        entity_type='Report',
+        entity_id=report.id,
+        action=AuditLog.Action.STATUS_CHANGE,
+        performed_by=request.user,
+        details=f'{old_status} -> {report.status}',
+    )
+
     return JsonResponse(serialize_report(report, for_admin=True))
+
+
+@login_required
+@require_http_methods(['GET'])
+def list_audit_log(request):
+    """
+    GET /moderation/admin/audit-log?entity_type=<optional>&action=<optional>&limit=<optional>
+    Admin only. Read-only feed of everything logged via log_action() across
+    the project — report status changes, user account_status changes
+    (bans/suspensions), etc. Newest first.
+    """
+    error = _require_admin(request)
+    if error:
+        return error
+
+    entries = AuditLog.objects.select_related('performed_by').all()
+
+    entity_type = request.GET.get('entity_type')
+    if entity_type:
+        entries = entries.filter(entity_type__iexact=entity_type)
+
+    action = request.GET.get('action')
+    if action:
+        if action not in AuditLog.Action.values:
+            return _error(
+                'action must be one of: %s' % ', '.join(AuditLog.Action.values), 400
+            )
+        entries = entries.filter(action=action)
+
+    try:
+        limit = min(int(request.GET.get('limit', 200)), 500)
+    except (TypeError, ValueError):
+        return _error('limit must be an integer.', 400)
+
+    data = [serialize_audit_log(e) for e in entries[:limit]]
+    return JsonResponse({'audit_log': data})

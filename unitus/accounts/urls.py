@@ -35,4 +35,14 @@ urlpatterns = [
     path('profile/', views.profile_page_view, name='profile-page'),
     path('profile/edit/', views.profile_edit_view, name='profile-edit'),
     path('profile/<int:id>/', views.profile_page_view, name='profile-page-detail'),
+
+    # ------------------------------------------------------------------
+    # NEW: Admin panel — reports themselves come from moderation.urls,
+    # this is just the page + user-management endpoints the admin panel
+    # needs. Every view below checks request.user.system_role == ADMIN.
+    # ------------------------------------------------------------------
+    path('panel/', views.admin_dashboard_view, name='admin-dashboard'),
+    path('panel/users', views.admin_list_users_view, name='admin-users'),
+    path('panel/users/<int:id>', views.admin_user_detail_view, name='admin-user-detail'),
+    path('panel/users/<int:id>/status', views.admin_user_status_view, name='admin-user-status'),
 ]
