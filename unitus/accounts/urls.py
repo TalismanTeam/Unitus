@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from reviews import views as review_views
 
 app_name = "accounts"
 
@@ -21,6 +22,9 @@ urlpatterns = [
     path("users/<int:id>", views.public_profile_view, name="public-profile"),
     path("users/<int:id>/active-projects-count", views.active_projects_count_view, name="active-projects-count"),
     path("users/<int:id>/report", views.report_user_view, name="report-user"),
+
+    path("users/<int:user_id>/badges/", review_views.user_badges_view, name="user-badges"),
+
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
