@@ -375,7 +375,7 @@ def active_projects_count_view(request, id):
 
 
 # ---------------------------------------------------------------------------
-# GET /users/me/dashboard/projects?tab=in_progress|suspended|completed|managed|all
+# GET /users/me/dashboard/projects?tab=recruiting|in_progress|suspended|completed|managed|all
 #
 # UNCHANGED: this is the JSON API dashboard.js calls to populate the
 # "My Projects" tabs. Only the page that embeds dashboard.js moved
@@ -390,6 +390,7 @@ def dashboard_projects_view(request):
     from projects.models import Project
 
     STATE_MAP = {
+        "recruiting": "RECRUITING",
         "in_progress": "IN_PROGRESS",
         "suspended": "SUSPENDED",
         "completed": "TERMINATED",

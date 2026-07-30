@@ -90,6 +90,9 @@
             <div class="project-actions" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
               <a href="{% url 'projects:project_edit_role' project.pk role.pk %}" class="secondary-btn" style="text-decoration: none; padding: 6px 12px; border-radius: 6px;">Edit Role</a>
               <a href="{% url 'projects:project_delete_role' project.pk role.pk %}" class="remove-btn" style="text-decoration: none; padding: 6px 12px; border-radius: 6px;">Delete</a>
+              {% if role.jobad and role.jobad.status == 'OPEN' %}
+                <a href="{% url 'recommendation:find-candidates-page' %}?ad_id={{ role.jobad.id }}" style="text-decoration: none; padding: 6px 12px; border-radius: 6px;">Find Candidates</a>
+              {% endif %}
             </div>
           {% endif %}
         </div>

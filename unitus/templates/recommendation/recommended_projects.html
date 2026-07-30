@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <title>Unitas - Recommended Projects</title>
+  <style>
+    .match-score-badge {
+      display: inline-block;
+      background: var(--surface-2);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .rec-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .rec-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 900px;">
+    <nav>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
+      <a href="{% url 'search:search_page' %}">Search</a>
+      <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
+      <a href="{% url 'chat:inbox' %}">Chat</a>
+
+      <form action="{% url 'accounts:logout' %}" method="POST" style="display: inline; background: transparent; padding: 0; border: none; box-shadow: none; margin-left: auto;">
+        {% csrf_token %}
+        <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
+      </form>
+    </nav>
+
+    <div class="page-header">
+      <div>
+        <h2 style="margin: 0;">Recommended Projects</h2>
+        <p class="hint" style="margin: 4px 0 0;">Open roles matched to your skills and profile.</p>
+      </div>
+      <a href="{% url 'projects:home' %}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">&larr; Back to Projects</a>
+    </div>
+
+    <div id="recommendationsStatus" class="hint" style="margin-bottom: 10px;"></div>
+
+    <div id="recommendedProjectsList">
+      <p class="hint">Loading recommendations…</p>
+    </div>
+  </div>
+
+  <!-- Send Request modal -->
+  <div class="modal-overlay" id="sendRequestModal">
+    <div class="modal-box">
+      <h3>Send Collaboration Request</h3>
+      <p class="hint" id="sendRequestTarget" style="margin-bottom: 15px;"></p>
+
+      <label>Message to the project manager (optional)</label>
+      <textarea id="sendRequestMessage" rows="4" placeholder="Introduce yourself and explain why you're a good fit..."></textarea>
+
+      <p id="sendRequestError" class="hint" style="color: #ef4444; display: none;"></p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" onclick="closeModal('sendRequestModal')">Cancel</button>
+        <button type="button" id="sendRequestConfirmBtn">Send Request</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('visible');
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('visible');
+    }
+  </script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/recommendation.js' %}"></script>
+</body>
+</html>

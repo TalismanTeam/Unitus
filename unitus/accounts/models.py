@@ -27,10 +27,10 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_active', True)
        
         extra_fields.setdefault('birth_year', 2000)        
-        extra_fields.setdefault('gender', 'Not Specified')
+        extra_fields.setdefault('gender', User.Gender.NOT_SPECIFIED)
         extra_fields.setdefault('first_name', 'ADMIN')     
         extra_fields.setdefault('last_name', 'System')  
-        extra_fields.setdefault('system_role', 'Admin') 
+        extra_fields.setdefault('system_role', User.SystemRole.ADMIN) 
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')

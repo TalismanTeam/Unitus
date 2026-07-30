@@ -1,10 +1,12 @@
 # unitus/recommendation/views.py
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 
-from projects.models import JobAd
+from projects.models import JobAd, Project
 from accounts.models import User
 from skills.models import SkillCategory
 from recommendation.models import RecommendationFeedback, RecommendationPreference
@@ -17,12 +19,15 @@ class RecommendedAdsView(APIView):
 
     def get(self, request):
         service = MatchScoreService()
-        recommendations = service.recommend_ads_for_user(request.user, top_k=10)
+        recommendations = service.recommend_ads_for_user(request.user, top_k=3)
 
         data = [
             {
                 "ad_id": rec["ad"].id,
+                "project_id": rec["ad"].project.id,
+                "project_role_id": rec["ad"].project_role.id,
                 "project_title": rec["ad"].project.title,
+                "project_description": rec["ad"].project.short_description,
                 "role_title": rec["ad"].project_role.role_title,
                 "match_score": rec["score"]
             }
@@ -45,7 +50,7 @@ class RecommendedCandidatesView(APIView):
             return Response({"detail": "Only PM can view candidates for this ad."}, status=status.HTTP_403_FORBIDDEN)
 
         service = MatchScoreService()
-        recommendations = service.recommend_candidates_for_ad(job_ad, request.user, top_k=10)
+        recommendations = service.recommend_candidates_for_ad(job_ad, request.user, top_k=3)
 
         data = [
             {
@@ -146,3 +151,59 @@ class RecommendationPreferencesView(APIView):
 
         preferences.save()
         return Response(serialize_preferences(preferences), status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Page views (server-rendered HTML; the JS on each page calls the JSON
+# endpoints above via fetch()).
+# ---------------------------------------------------------------------------
+
+@login_required
+def recommended_projects_page(request):
+    """
+    GET /recommendations/projects-page/
+    "Recommended Projects" entry point from the Projects hub. Renders an
+    empty shell — static/js/recommendation.js loads the actual list from
+    GET /recommendations/ads/.
+    """
+    return render(request, 'recommendation/recommended_projects.html')
+
+
+@login_required
+def find_candidates_page(request):
+    """
+    GET /recommendations/find-candidates-page/
+    PM tool: "for which project/role (that I manage) do you want me to find
+    a matching user". Only lists the requesting user's own projects and only
+    roles that still have an open job ad (still recruiting).
+
+    The role->job-ad mapping is handed to the template as JSON (via
+    json_script) so the page's JS can populate the role dropdown and know
+    which ad_id to call GET /recommendations/candidates/<ad_id>/ with,
+    without extra round-trips.
+    """
+    projects = Project.objects.filter(pm=request.user).order_by('-created_at').prefetch_related(
+        'projectrole_set'
+    )
+
+    pm_projects_data = []
+    for project in projects:
+        roles_data = []
+        for role in project.projectrole_set.all():
+            job_ad = getattr(role, 'jobad', None)
+            if job_ad is not None and job_ad.status == JobAd.Status.OPEN:
+                roles_data.append({
+                    'role_id': role.id,
+                    'role_title': role.role_title,
+                    'ad_id': job_ad.id,
+                })
+        if roles_data:
+            pm_projects_data.append({
+                'project_id': project.id,
+                'project_title': project.title,
+                'roles': roles_data,
+            })
+
+    return render(request, 'recommendation/find_candidates.html', {
+        'pm_projects_data': pm_projects_data,
+    })

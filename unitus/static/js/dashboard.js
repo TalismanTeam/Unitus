@@ -2,7 +2,7 @@
 // Connects the "In Progress / Suspended / Completed / Managed / All" tabs
 // on dashboard.html to:
 //
-//   GET /users/me/dashboard/projects?tab=<in_progress|suspended|completed|managed|all>
+//   GET /users/me/dashboard/projects?tab=<recruiting|in_progress|suspended|completed|managed|all>
 //
 // (accounts.views.dashboard_projects_view, mounted at '' — no prefix — in
 // the root urls.py). Session-auth only, GET-only, so no CSRF header is
@@ -27,6 +27,7 @@ const DASHBOARD_PROJECTS_URL = "/users/me/dashboard/projects";
 const projectWorkspaceUrl = (id) => `/projects/${id}/workspace/`;
 
 const TAB_HEADINGS = {
+  recruiting: "Recruiting Projects",
   in_progress: "In Progress Projects",
   suspended: "Suspended Projects",
   completed: "Completed / Terminated Projects",
@@ -113,15 +114,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     projects.forEach((project) => {
       const li = document.createElement("li");
-      li.style.cursor = "pointer";
+      li.className = "project-card";
       li.title = "View project details";
       li.addEventListener("click", () => {
         window.location.href = projectWorkspaceUrl(project.id);
       });
 
-      const title = document.createElement("strong");
+      // ---- Header row: title + status badge -----------------------------
+      const header = document.createElement("div");
+      header.className = "project-card-header";
+
+      const title = document.createElement("h3");
+      title.className = "project-title";
       title.textContent = project.title;
-      li.appendChild(title);
+      header.appendChild(title);
+
+      const stateKey = (project.state || "").toLowerCase().replace(/\s+/g, "_");
+      const badge = document.createElement("span");
+      badge.className = `status-badge status-${stateKey}`;
+      badge.textContent = project.state;
+      header.appendChild(badge);
+
+      li.appendChild(header);
+
+      // ---- Description ----------------------------------------------------
+      if (project.short_description) {
+        const desc = document.createElement("p");
+        desc.className = "project-description";
+        desc.textContent = project.short_description;
+        li.appendChild(desc);
+      }
+
+      // ---- Footer row: role + duration ------------------------------------
+      const footer = document.createElement("div");
+      footer.className = "project-card-footer";
 
       let roleLabel;
       if (project.role_title) {
@@ -131,17 +157,19 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         roleLabel = project.is_pm ? "Project Manager" : "Member";
       }
-      const meta = document.createElement("span");
-      meta.textContent = ` — Role: ${roleLabel} — Status: ${project.state}`;
-      li.appendChild(meta);
+      const role = document.createElement("span");
+      role.className = "project-role";
+      role.textContent = roleLabel;
+      footer.appendChild(role);
 
-      if (project.short_description) {
-        const desc = document.createElement("div");
-        desc.textContent = project.short_description;
-        desc.style.fontSize = "0.9em";
-        desc.style.opacity = "0.8";
-        li.appendChild(desc);
+      if (project.duration_days != null) {
+        const duration = document.createElement("span");
+        duration.className = "project-duration";
+        duration.textContent = `${project.duration_days}d`;
+        footer.appendChild(duration);
       }
+
+      li.appendChild(footer);
 
       list.appendChild(li);
     });

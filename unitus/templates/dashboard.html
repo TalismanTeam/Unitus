@@ -6,12 +6,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unitas - My Projects</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* Scoped to this page: shrink the project-category tabs so all six
+           fit on a single line instead of wrapping. Not added to
+           styles.css since those classes aren't defined there. */
+        /* Scoped to this page: matches the 900px container width used on
+           the Recommended Projects page, instead of the shared
+           styles.css default of 800px. */
+        .container {
+            max-width: 900px;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+        .tabs .tab-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Project cards: #project-list is a <ul> populated by dashboard.js.
+           Styled as a plain stacked list (like the .rec-card cards on the
+           Recommended Projects page) rather than a card grid. Colors/radius
+           pulled from styles.css's --bg/--surface/--accent theme (Forge /
+           dark, amber accent) — not redefined here. */
+        #project-list {
+            list-style: none;
+            margin: 20px 0 0;
+            padding: 0;
+        }
+
+        .project-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .project-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .project-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--text);
+        }
+
+        /* Matches .match-score-badge on the Recommended Projects page:
+           one uniform accent-colored pill instead of a color per status. */
+        .status-badge {
+            display: inline-block;
+            flex-shrink: 0;
+            background: var(--surface-2);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+        .project-description {
+            margin: 0;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .project-card-footer {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .project-role {
+            font-weight: 500;
+        }
+
+        /* Empty-state <li> rendered by dashboard.js when a tab has no
+           projects — shouldn't look/behave like a clickable card. */
+        #project-list li:only-child:not(.project-card) {
+            cursor: default;
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
     <nav>
-      <a href="{% url 'accounts:profile-page' %}" class="active">Profile</a>  
-      <a href="{% url 'projects:home' %}">Projects</a>
+      <a href="{% url 'accounts:profile-page' %}">Profile</a>  
+      <a href="{% url 'projects:home' %}" class="active">Projects</a>
       <a href="{% url 'search:search_page' %}">Search</a>
       <a href="{% url 'collaboration:ticket-management' %}">Tickets</a>
       <a href="{% url 'chat:inbox' %}">Chat</a>
@@ -34,6 +140,7 @@
 
             <div class="tabs">
                 <button class="tab-btn active" data-tab="in_progress">In Progress</button>
+                <button class="tab-btn" data-tab="recruiting">Recruiting</button>
                 <button class="tab-btn" data-tab="suspended">Suspended</button>
                 <button class="tab-btn" data-tab="completed">Completed/Terminated</button>
                 <button class="tab-btn" data-tab="managed">My Managed Projects</button>
@@ -48,14 +155,6 @@
                          GET /auth/users/me/dashboard/projects?tab=... -->
                 </ul>
             </div>
-
-            <section class="activity-tracker" style="margin-top: 2rem;">
-                <h2>Recent Activity</h2>
-                <ul>
-                    <li>You joined "Project Alpha" 2 days ago.</li>
-                    <li>You updated your profile skills.</li>
-                </ul>
-            </section>
         </main>
     </div>
     <script src="{% static 'js/dashboard.js' %}"></script>

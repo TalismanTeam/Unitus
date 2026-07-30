@@ -50,10 +50,77 @@
       {% endif %}
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; flex-wrap: wrap;">
       <p class="hint" style="margin: 0;">Full details are visible to approved members only.</p>
-      <a href="{% url 'projects:browse' %}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">&larr; Back to search</a>
+      <div style="display: flex; gap: 10px;">
+        <a href="{% url 'projects:browse' %}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">&larr; Back to search</a>
+        {% if job_ad.status == 'OPEN' %}
+          {% if request.user.is_authenticated %}
+            <button type="button" id="sendRequestBtn">Send Request</button>
+          {% else %}
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="secondary-btn" style="text-decoration: none; padding: 10px 20px; border-radius: 6px;">Log in to apply</a>
+          {% endif %}
+        {% endif %}
+      </div>
     </div>
   </div>
+
+  <div class="modal-overlay" id="sendRequestModal">
+    <div class="modal-box">
+      <h3>Send Collaboration Request</h3>
+      <p class="hint" style="margin-bottom: 15px;">{{ job_ad.project_role.role_title }} — {{ job_ad.project.title }}</p>
+
+      <label>Message to the project manager (optional)</label>
+      <textarea id="sendRequestMessage" rows="4" placeholder="Introduce yourself and explain why you're a good fit..."></textarea>
+
+      <p id="sendRequestError" class="hint" style="color: #ef4444; display: none;"></p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" onclick="closeModal('sendRequestModal')">Cancel</button>
+        <button type="button" id="sendRequestConfirmBtn">Send Request</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(modalId) { document.getElementById(modalId).classList.add('visible'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.remove('visible'); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const openBtn = document.getElementById('sendRequestBtn');
+      const confirmBtn = document.getElementById('sendRequestConfirmBtn');
+      const errorEl = document.getElementById('sendRequestError');
+      const messageInput = document.getElementById('sendRequestMessage');
+      if (!openBtn) return;
+
+      openBtn.addEventListener('click', () => {
+        errorEl.style.display = 'none';
+        messageInput.value = '';
+        openModal('sendRequestModal');
+      });
+
+      confirmBtn.addEventListener('click', async () => {
+        errorEl.style.display = 'none';
+        const { ok, data } = await apiFetch('/collaboration/tickets', {
+          method: 'POST',
+          body: {
+            type: 'application',
+            project_id: {{ job_ad.project.id }},
+            project_role_id: {{ job_ad.project_role.id }},
+            message_text: messageInput.value.trim() || undefined,
+          },
+        });
+        if (!ok) {
+          errorEl.textContent = (data && data.error) || 'Could not send the request.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        closeModal('sendRequestModal');
+        openBtn.disabled = true;
+        openBtn.textContent = 'Request Sent';
+      });
+    });
+  </script>
+  <script src="{% static 'js/api.js' %}"></script>
 </body>
 </html>
