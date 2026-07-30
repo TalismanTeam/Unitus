@@ -15,6 +15,9 @@ urlpatterns = [
     path("users/me/work-preferences", views.work_preferences_view, name="work-preferences"),
     path("users/me/privacy-settings", views.privacy_settings_view, name="privacy-settings"),
     path("users/me/dashboard/projects", views.dashboard_projects_view, name="dashboard-projects"),
+    # Job Ads Edit popup on the profile page: GET current state / PATCH
+    # visible_on_profile for one of your own ProjectMember rows.
+    path("users/me/memberships/<int:member_id>/visibility", views.membership_visibility_view, name="membership-visibility"),
     # New: PATCH /users/me/password — change the logged-in user's password
     # (old_password / new_password / confirm_password). See
     # views.change_password_view.

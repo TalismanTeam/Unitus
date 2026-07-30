@@ -92,6 +92,11 @@ class ProjectMember(models.Model):
     project_role = models.ForeignKey(ProjectRole, on_delete=models.SET_NULL, null=True, blank=True)
     member_status = models.CharField(max_length=10, choices=MemberStatus.choices, default=MemberStatus.ACTIVE)
     joined_at = models.DateTimeField(auto_now_add=True)
+    # Lets a user hide an individual role/job-ad from their *public* profile
+    # (GET /users/:id) without affecting their own view (GET /users/me) or
+    # the project/team itself. Defaults to visible so existing rows aren't
+    # silently hidden after migration.
+    visible_on_profile = models.BooleanField(default=True)
 
     class Meta:
         constraints = [

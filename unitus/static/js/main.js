@@ -104,13 +104,80 @@ document.addEventListener("DOMContentLoaded", () => {
         const editBtn = document.getElementById('editProfileBtn');
         const reportBtn = document.getElementById('reportUserBtn');
         const startChatBtn = document.getElementById('startChatBtn');
+        const editJobAdsBtn = document.getElementById('editJobAdsBtn');
         if (isOwnProfile) {
           reportBtn.style.display = 'none';     // can't report yourself; backend blocks it too
           if (startChatBtn) startChatBtn.style.display = 'none';  // element isn't rendered at all on own profile, but guard just in case
+          if (editJobAdsBtn) editJobAdsBtn.style.display = '';    // only the profile owner can hide/show their own job ads
         } else {
           editBtn.style.display = 'none'; // no PATCH endpoint for anyone but yourself
+          // editJobAdsBtn stays hidden (its default) on someone else's profile
         }
       }
+
+      // ---- Job Ads (ProjectMember rows the profile belongs to) -----------
+      let currentJobAds = []; // last-loaded list, reused by the Edit modal
+
+      function renderJobAds(jobAds) {
+        currentJobAds = jobAds || [];
+        const container = document.getElementById('jobAdsList');
+        if (!jobAds || jobAds.length === 0) {
+          container.innerHTML = '<p style="color: var(--muted); font-size: 14px; margin: 0;">No job ads to show.</p>';
+          return;
+        }
+        container.innerHTML = '';
+        jobAds.forEach((ad) => {
+          const row = document.createElement('div');
+          row.style.cssText =
+            'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);';
+          row.innerHTML = `
+            <span>${ad.role_title || 'Role'} <span style="color:var(--muted);font-size:12px;">— ${ad.project_title}</span></span>
+            <span style="font-size:12px;color:var(--muted);">${ad.project_state}</span>`;
+          container.appendChild(row);
+        });
+      }
+
+      // ---- Job Ads Edit modal (own profile only) --------------------------
+      function renderJobAdsEditList() {
+        const container = document.getElementById('jobAdsEditList');
+        if (!container) return;
+        if (currentJobAds.length === 0) {
+          container.innerHTML = '<p style="color: var(--muted); font-size: 14px;">No job ads yet.</p>';
+          return;
+        }
+        container.innerHTML = '';
+        currentJobAds.forEach((ad) => {
+          const row = document.createElement('label');
+          row.style.cssText =
+            'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;';
+          row.innerHTML = `
+            <span>${ad.role_title || 'Role'} <span style="color:var(--muted);font-size:12px;">— ${ad.project_title}</span></span>
+            <input type="checkbox" data-membership-id="${ad.membership_id}" ${ad.visible_on_profile ? 'checked' : ''} style="width:auto;">`;
+          container.appendChild(row);
+        });
+
+        container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+          cb.addEventListener('change', async () => {
+            const id = cb.dataset.membershipId;
+            try {
+              await apiFetch(`/users/me/memberships/${id}/visibility`, {
+                method: 'PATCH',
+                body: JSON.stringify({ visible_on_profile: cb.checked }),
+              });
+              const ad = currentJobAds.find((a) => String(a.membership_id) === id);
+              if (ad) ad.visible_on_profile = cb.checked;
+            } catch (e) {
+              alert(e.message);
+              cb.checked = !cb.checked; // revert on failure
+            }
+          });
+        });
+      }
+
+      window.openJobAdsModal = function () {
+        renderJobAdsEditList();
+        document.getElementById('jobAdsModal').style.display = 'flex';
+      };
 
       // ---- Skills (view + remove only; adding lives on the edit page) ------
       function renderSkills(skills) {
@@ -224,6 +291,7 @@ function renderHonors(data) {
           const data = await apiFetch(profileUrl);
           populateHeader(data);
           renderSkills(data.skills);
+          renderJobAds(data.job_ads);
           loadHonors(data.id);
         } catch (e) {
           document.getElementById('viewName').textContent = 'Unable to load profile';
