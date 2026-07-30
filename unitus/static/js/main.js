@@ -147,6 +147,58 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+async function loadHonors(userId) {
+  const container = document.getElementById('honorsList');
+  if (!container) return;
+  
+  console.log("[Unitas Debug] Fetching badges for userId:", userId);
+  
+  try {
+  
+    const data = await apiFetch(`/users/${userId}/badges/`);
+    console.log("[Unitas Debug] Badges API response received:", data);
+    
+    renderHonors(data);
+  } catch (e) {
+    container.innerHTML = '<p style="color: var(--muted); font-size: 13px; margin: 0;">Could not load honors.</p>';
+    console.error("[Unitas Debug] Error in loadHonors:", e);
+  }
+}
+
+function renderHonors(data) {
+  const container = document.getElementById('honorsList');
+  
+  
+  let badges = [];
+  if (Array.isArray(data)) {
+    badges = data;
+  } else if (data && Array.isArray(data.badges)) {
+    badges = data.badges;
+  } else if (data && data.results && Array.isArray(data.results)) {
+    badges = data.results; 
+  }
+
+  if (!badges || badges.length === 0) {
+    container.innerHTML = '<p style="color: var(--muted); font-size: 14px; margin: 0;">No honors unlocked yet.</p>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  badges.forEach((b) => {
+    const chip = document.createElement('span');
+    chip.style.cssText =
+      'display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); ' +
+      'color:#10b981; border:1px solid #10b981; padding:6px 14px; border-radius:20px; ' +
+      'font-size:13px; font-weight:600; margin:0 8px 8px 0;';
+    
+    // 
+    const tagName = b.tag_name || (b.tag && b.tag.name) || (b.name) || 'Honor';
+    
+    chip.textContent = `🏅 ${tagName}`;
+    container.appendChild(chip);
+  });
+}
+
       // ---- Report modal (other users' profiles only) --------------------------
       async function handleReportSubmit(event) {
         event.preventDefault();
@@ -172,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await apiFetch(profileUrl);
           populateHeader(data);
           renderSkills(data.skills);
+          loadHonors(data.id);
         } catch (e) {
           document.getElementById('viewName').textContent = 'Unable to load profile';
           console.error(e);

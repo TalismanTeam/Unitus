@@ -64,13 +64,6 @@
         {% csrf_token %}
         <button type="submit" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Logout</button>
       </form>
-
-            <!-- <a href="notification.html">Notifications</a>
-      <a href="project_advertisements.html">Advertisements</a>
-      <a href="{% url 'home' %}">Home</a>
-      <a href="settings.html">Settings</a>
-      <a href="matching.html">Matchmaking</a> -->
-
     </nav>
 
     <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
@@ -99,13 +92,14 @@
           <p style="margin: 0; font-size: 12px; color: var(--muted);" id="viewWorkType">Preference: Not set</p>
         </div>
       </div>
-<div style="margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
-  {% if profile_id %}
-    <a href="{% url 'chat:start_direct_chat' profile_id %}" id="startChatBtn" style="background: var(--accent); color: #1a1200; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">Start Chat</a>
-  {% endif %}
-  <a id="editProfileBtn" href="{% url 'accounts:profile-edit' %}" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">Edit Profile</a>
-  <button id="reportUserBtn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444;" onclick="openReportModal()">Report User</button>
-</div>
+      <div style="margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
+        {% if profile_id %}
+          <a href="{% url 'chat:start_direct_chat' profile_id %}" id="startChatBtn" style="background: var(--accent); color: #1a1200; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">Start Chat</a>
+        {% endif %}
+        <a id="editProfileBtn" href="{% url 'accounts:profile-edit' %}" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">Edit Profile</a>
+        <button id="reportUserBtn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444;" onclick="openReportModal()">Report User</button>
+      </div>
+    </div>
 
     <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
       <h3 style="margin-top: 0; color: var(--text);">Skills Matrix</h3>
@@ -135,7 +129,17 @@
       </div>
     </div>
 
-  </div>
+    <div style="background: var(--surface); padding: 25px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 25px;">
+      <h3 style="margin-top: 0; color: var(--text);">Honors &amp; Badges</h3>
+      <p style="margin: 0 0 12px; font-size: 12px; color: var(--muted);">
+        Unlocked after receiving the same positive tag from multiple past teammates.
+      </p>
+      <div id="honorsList" style="display: flex; flex-wrap: wrap;">
+        <p style="color: var(--muted); font-size: 14px; margin: 0;">Loading honors...</p>
+      </div>
+    </div>
+
+  </div> 
 
   <div id="reportModal" class="modal-overlay">
     <div style="background: var(--surface); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 400px; width: 90%; text-align: left;">
@@ -166,9 +170,6 @@
   </div>
 
   <script>
-    // profile_id is passed by accounts.views.profile_page_view:
-    //   /auth/profile/       -> profile_id is None  -> viewing your own profile
-    //   /auth/profile/<id>/  -> profile_id is the id -> viewing someone else's
     const PROFILE_ID = {% if profile_id %}{{ profile_id }}{% else %}null{% endif %};
 
     function openReportModal() {
