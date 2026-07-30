@@ -231,6 +231,103 @@ function renderHonors(data) {
         }
       }
 
+      // ---- Invite to Project modal (other users' profiles only) ----------
+      // Button/modal only exist in the DOM when profile_id is set (i.e.
+      // never on your own profile — see the {% if profile_id %} block in
+      // userprofile.html), so this whole block is a no-op on isOwnProfile.
+      const inviteBtn = document.getElementById('inviteToProjectBtn');
+      if (inviteBtn) {
+        const inviteForm = document.getElementById('inviteForm');
+        const loadingMsg = document.getElementById('inviteLoadingMsg');
+        const emptyMsg = document.getElementById('inviteEmptyMsg');
+        const closeOnlyBtn = document.getElementById('inviteCloseOnlyBtn');
+        const projectSelect = document.getElementById('inviteProjectSelect');
+        const roleSelect = document.getElementById('inviteRoleSelect');
+        const submitBtn = document.getElementById('inviteSubmitBtn');
+        const errorEl = document.getElementById('inviteError');
+        let myRecruitingProjects = [];
+
+        function populateRoleSelect(projectId) {
+          const project = myRecruitingProjects.find((p) => p.id === Number(projectId));
+          roleSelect.innerHTML = '';
+          (project ? project.roles : []).forEach((r) => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = r.role_title;
+            roleSelect.appendChild(opt);
+          });
+        }
+
+        async function loadMyRecruitingProjects() {
+          loadingMsg.style.display = '';
+          emptyMsg.style.display = 'none';
+          inviteForm.style.display = 'none';
+          closeOnlyBtn.style.display = 'none';
+          errorEl.style.display = 'none';
+
+          try {
+            // Only projects where the viewer is PM AND currently RECRUITING
+            // are returned — enforced server-side by /projects/mine/recruiting/.
+            const data = await apiFetch('/projects/mine/recruiting/');
+            myRecruitingProjects = data.projects || [];
+
+            loadingMsg.style.display = 'none';
+
+            if (myRecruitingProjects.length === 0) {
+              emptyMsg.style.display = '';
+              closeOnlyBtn.style.display = '';
+              return;
+            }
+
+            projectSelect.innerHTML = '';
+            myRecruitingProjects.forEach((p) => {
+              const opt = document.createElement('option');
+              opt.value = p.id;
+              opt.textContent = p.title;
+              projectSelect.appendChild(opt);
+            });
+            populateRoleSelect(projectSelect.value);
+
+            inviteForm.style.display = '';
+          } catch (e) {
+            loadingMsg.style.display = 'none';
+            emptyMsg.textContent = 'Could not load your projects. Please try again.';
+            emptyMsg.style.display = '';
+            closeOnlyBtn.style.display = '';
+            console.error(e);
+          }
+        }
+
+        projectSelect.addEventListener('change', () => populateRoleSelect(projectSelect.value));
+        inviteBtn.addEventListener('click', loadMyRecruitingProjects);
+
+        inviteForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          errorEl.style.display = 'none';
+          submitBtn.disabled = true;
+          try {
+            await apiFetch('/collaboration/tickets', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'invitation',
+                project_id: Number(projectSelect.value),
+                project_role_id: Number(roleSelect.value),
+                receiver_id: PROFILE_ID,
+                message_text: document.getElementById('inviteMessage').value || null,
+              }),
+            });
+            closeInviteModal();
+            alert('Invitation sent.');
+            inviteForm.reset();
+          } catch (e) {
+            errorEl.textContent = e.message;
+            errorEl.style.display = '';
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      }
+
       applyModeVisibility();
       loadProfile();
       if (!isOwnProfile) {

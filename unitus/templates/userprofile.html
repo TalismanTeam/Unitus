@@ -95,6 +95,7 @@
       <div style="margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
         {% if profile_id %}
           <a href="{% url 'chat:start_direct_chat' profile_id %}" id="startChatBtn" style="background: var(--accent); color: #1a1200; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">Start Chat</a>
+          <button type="button" id="inviteToProjectBtn" onclick="openInviteModal()" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--accent); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Invite to Project</button>
         {% endif %}
         <a id="editProfileBtn" href="{% url 'accounts:profile-edit' %}" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">Edit Profile</a>
         <button id="reportUserBtn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444;" onclick="openReportModal()">Report User</button>
@@ -169,6 +170,36 @@
     </div>
   </div>
 
+  <div id="inviteModal" class="modal-overlay">
+    <div style="background: var(--surface); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 400px; width: 90%; text-align: left;">
+      <h3 style="margin-top: 0; color: var(--text);">Invite to Project</h3>
+      <p style="font-size: 13px; color: var(--muted);" id="inviteLoadingMsg">Loading your recruiting projects...</p>
+      <p style="font-size: 13px; color: var(--muted); display: none;" id="inviteEmptyMsg">
+        You don't have any projects currently recruiting. Only projects with an open, recruiting status can send invitations.
+      </p>
+
+      <form id="inviteForm" style="background: transparent; padding: 0; border: none; box-shadow: none; display: none;">
+        <label style="display: block; margin: 10px 0 4px; color: var(--text); font-size: 13px;">Project</label>
+        <select id="inviteProjectSelect" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px;"></select>
+
+        <label style="display: block; margin: 10px 0 4px; color: var(--text); font-size: 13px;">Role</label>
+        <select id="inviteRoleSelect" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px;"></select>
+
+        <label style="display: block; margin: 10px 0 4px; color: var(--text); font-size: 13px;">Message (optional)</label>
+        <textarea id="inviteMessage" placeholder="Say why you'd like them to join..." style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 10px;"></textarea>
+
+        <p id="inviteError" style="color: #ef4444; font-size: 12px; margin: 10px 0 0; display: none;"></p>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" id="inviteSubmitBtn" style="background: var(--accent); color: #1a1200; flex: 1;">Send Invite</button>
+          <button type="button" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); flex: 1;" onclick="closeInviteModal()">Cancel</button>
+        </div>
+      </form>
+
+      <button type="button" id="inviteCloseOnlyBtn" style="background: var(--surface-2); color: var(--text); border: 1px solid var(--border); width: 100%; margin-top: 20px; display: none;" onclick="closeInviteModal()">Close</button>
+    </div>
+  </div>
+
   <script>
     const PROFILE_ID = {% if profile_id %}{{ profile_id }}{% else %}null{% endif %};
 
@@ -178,6 +209,14 @@
 
     function closeReportModal() {
       document.getElementById('reportModal').style.display = 'none';
+    }
+
+    function openInviteModal() {
+      document.getElementById('inviteModal').style.display = 'flex';
+    }
+
+    function closeInviteModal() {
+      document.getElementById('inviteModal').style.display = 'none';
     }
   </script>
   <script src="{% static 'js/main.js' %}"></script>
