@@ -132,6 +132,18 @@
       {% endfor %}
     </ul>
 
+    {% if can_leave_reviews %}
+      <div class="modern-card" style="margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h4 style="margin:0;">Project Completed Successfully</h4>
+            <p class="hint" style="margin:4px 0 0;">Rate and tag the teammates you worked with on this project.</p>
+          </div>
+          <button type="button" id="openReviewModalBtn">Leave a Review</button>
+        </div>
+      </div>
+    {% endif %}
+
     
     {% if is_pm %}
       <div class="modern-card" style="margin-top: 30px; background: rgba(255, 180, 84, 0.05);">
@@ -150,5 +162,26 @@
     {% endif %}
 
   </div>
+
+  {% if can_leave_reviews %}
+    {{ reviewable_members|json_script:"reviewable-members-data" }}
+    <input type="hidden" id="reviewProjectId" value="{{ project.pk }}">
+
+    <div class="modal-overlay" id="reviewModalOverlay">
+      <div class="modal-box" style="max-width: 560px; max-height: 80vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;">Rate Your Teammates</h3>
+          <button type="button" class="close-review-modal secondary-btn" style="padding:4px 10px;">&times;</button>
+        </div>
+        <div id="reviewMembersList" style="margin-top: 15px;"></div>
+        <p id="reviewAllDoneMessage" class="hint" style="display:none; text-align:center;">
+          You've reviewed everyone on this project. Thank you!
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/reviews.js' %}"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from moderation.audit import log_action
 from skills.models import UserSkill
+from reviews.models import Review
 
 from .forms import (
     ProjectEditForm,
@@ -192,6 +193,37 @@ def project_workspace(request, pk):
         else None
     )
 
+    can_leave_reviews = (
+        project.state == Project.State.TERMINATED
+        and project.termination_reason == Project.TerminationReason.SUCCESS
+        and ProjectMember.objects.filter(project=project, user=request.user).exists()
+    )
+
+    reviewable_members = []
+    if can_leave_reviews:
+        already_reviewed_ids = set(
+            Review.objects.filter(reviewer=request.user, project=project)
+            .values_list('reviewee_id', flat=True)
+        )
+        teammates = ProjectMember.objects.filter(project=project).exclude(
+            user=request.user
+        ).select_related('user', 'project_role')
+
+        for m in teammates:
+            if m.project_role:
+                role_title = m.project_role.role_title
+            elif m.user_id == project.pm_id:
+                role_title = 'Project Manager'
+            else:
+                role_title = 'Unassigned Role'
+
+            reviewable_members.append({
+                'user_id': m.user_id,
+                'username': m.user.username,
+                'role_title': role_title,
+                'already_reviewed': m.user_id in already_reviewed_ids,
+            })
+
     return render(request, 'projects/project_workspace.html', {
         'project': project,
         'roles': roles,
@@ -199,8 +231,9 @@ def project_workspace(request, pk):
         'is_pm': is_project_pm(request.user, project),
         'is_member': is_active_member(request.user, project),
         'owner_role_title': owner_role_title,
+        'can_leave_reviews': can_leave_reviews,
+        'reviewable_members': reviewable_members,
     })
-
 
 @login_required
 def project_state_change(request, pk):

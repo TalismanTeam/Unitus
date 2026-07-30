@@ -152,3 +152,99 @@
     color: var(--muted);
 }
 .skill-tags li span { color: var(--text); font-weight: 600; margin-left: 4px; }
+
+
+/* ---- Reviews (Leave a Review flow) -------------------------------- */
+
+.review-member-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.review-member-card.is-done {
+    opacity: 0.55;
+}
+
+.review-member-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.star-rating {
+    display: flex;
+    gap: 4px;
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.star-rating .star {
+    color: var(--border);
+    transition: color 0.15s ease;
+}
+
+.star-rating .star.filled {
+    color: var(--accent);
+}
+
+.tag-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.tag-chip {
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--muted);
+    transition: all 0.15s ease;
+}
+
+.tag-chip.positive.selected {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.tag-chip.negative.selected {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.review-submit-status {
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+
+.tag-section {
+    margin-bottom: 10px;
+}
+
+.tag-section-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.tag-section-label.positive { color: #10b981; }
+.tag-section-label.negative { color: #ef4444; }
+
+.tag-section:not(:last-child) {
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--border);
+}
