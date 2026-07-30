@@ -13,6 +13,11 @@ urlpatterns = [
     # it's reused as-is for the new "Recommended Projects" button.
     path('browse/', views.browse, name='browse'),
 
+    # JSON endpoint for the "Invite to Project" modal on another user's
+    # profile page (main.js fetches this to populate the project/role
+    # dropdowns before sending an invitation ticket).
+    path('mine/recruiting/', views.my_recruiting_projects, name='my_recruiting_projects'),
+
     path('new/', views.project_create, name='project_create'),
     path('<int:pk>/add-role/', views.project_add_role, name='project_add_role'),
     path('<int:pk>/workspace/', views.project_workspace, name='project_workspace'),

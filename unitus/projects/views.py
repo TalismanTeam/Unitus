@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from moderation.audit import log_action
@@ -70,6 +71,34 @@ def browse(request):
 def jobad_detail(request, pk):
     job_ad = get_object_or_404(JobAd.objects.select_related('project', 'project_role'), pk=pk)
     return render(request, 'projects/jobad_detail.html', {'job_ad': job_ad})
+
+
+@login_required
+def my_recruiting_projects(request):
+    """
+    JSON endpoint for the "Invite to Project" modal on another user's
+    profile page: returns the projects where request.user is PM AND the
+    project is currently RECRUITING (only those can accept invitations),
+    each with its list of roles so the modal can offer a role picker
+    right after the project is chosen.
+    """
+    projects = Project.objects.filter(
+        pm=request.user, state=Project.State.RECRUITING
+    ).prefetch_related('projectrole_set')
+
+    data = [
+        {
+            'id': project.id,
+            'title': project.title,
+            'roles': [
+                {'id': role.id, 'role_title': role.role_title}
+                for role in project.projectrole_set.all()
+            ],
+        }
+        for project in projects
+    ]
+
+    return JsonResponse({'projects': data})
 
 
 @login_required
